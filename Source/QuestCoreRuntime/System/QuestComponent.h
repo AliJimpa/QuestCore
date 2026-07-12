@@ -111,7 +111,7 @@ public:
 	 * (Done/Failed/Canceled) or the array is empty.
 	 */
 	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
-	UQuestObjective *GetCurrentObjective() const;
+	int32 GetCurrentObjective() const;
 	// Convenience passthrough so existing FName-based lookups keep working.
 	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
 	FName GetQuestId() const { return QuestDefinition ? QuestDefinition->QuestId : NAME_None; }

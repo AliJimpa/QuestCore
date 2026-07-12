@@ -167,16 +167,19 @@ float UQuestComponent::GetProgress() const
 	return Total / Objectives.Num();
 }
 
-UQuestObjective *UQuestComponent::GetCurrentObjective() const
+int32 UQuestComponent::GetCurrentObjective() const
 {
+	int32 Reesult = 0;
 	for (UQuestObjective *Objective : Objectives)
 	{
 		if (Objective && Objective->GetState() == EQuestObjectiveState::InProgress)
 		{
-			return Objective;
+			return Reesult;
 		}
+		Reesult++;
 	}
-	return nullptr;
+	return -1;
+	// return nullptr;
 }
 
 void UQuestComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
