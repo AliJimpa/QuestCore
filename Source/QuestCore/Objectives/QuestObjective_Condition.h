@@ -11,7 +11,7 @@
  * needs to be able to Fail.
  */
 UCLASS(Abstract, Blueprintable, EditInlineNew)
-class QUESTCORERUNTIME_API UQuestObjective_Condition : public UQuestObjective
+class QUESTCORE_API UQuestObjective_Condition : public UQuestObjective
 {
 	GENERATED_BODY()
 

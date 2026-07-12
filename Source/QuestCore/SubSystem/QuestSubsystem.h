@@ -14,7 +14,7 @@ class UQuestDefinition;
  * an objective group (see UQuestComponent::UpdateQuest()).
  */
 UCLASS()
-class QUESTCORERUNTIME_API UQuestSubsystem : public UWorldSubsystem
+class QUESTCORE_API UQuestSubsystem : public UWorldSubsystem
 {
 	GENERATED_BODY()
 public:

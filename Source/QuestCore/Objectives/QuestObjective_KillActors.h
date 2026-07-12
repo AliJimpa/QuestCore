@@ -14,7 +14,7 @@ DECLARE_MULTICAST_DELEGATE_OneParam(FOnActorKilled, AActor* /*KilledActor*/);
  * (a GameplayMessage, an ActorComponent delegate, whatever you use).
  */
 UCLASS()
-class QUESTCORERUNTIME_API UQuestObjective_KillActors : public UQuestObjective_Event
+class QUESTCORE_API UQuestObjective_KillActors : public UQuestObjective_Event
 {
 	GENERATED_BODY()
 

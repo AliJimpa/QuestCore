@@ -18,7 +18,7 @@ enum class EQuestObjectiveState : uint8
  * whether an objective resolves by polling or by event.
  */
 UCLASS(Abstract, Blueprintable, EditInlineNew, DefaultToInstanced)
-class QUESTCORERUNTIME_API UQuestObjective : public UObject
+class QUESTCORE_API UQuestObjective : public UObject
 {
 	GENERATED_BODY()
 
