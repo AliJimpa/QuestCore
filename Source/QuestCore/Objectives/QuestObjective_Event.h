@@ -12,7 +12,7 @@
  * so the Quest reads it the exact same way as any other objective.
  */
 UCLASS(Abstract, Blueprintable, EditInlineNew)
-class QUESTCORERUNTIME_API UQuestObjective_Event : public UQuestObjective
+class QUESTCORE_API UQuestObjective_Event : public UQuestObjective
 {
 	GENERATED_BODY()
 

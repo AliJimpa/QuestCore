@@ -16,14 +16,9 @@
 	"Installed": false,
 	"Modules": [
 		{
-			"Name": "QuestCoreRuntime",
+			"Name": "QuestCore",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
-		},
-		{
-    		"Name": "QuestCoreEditor",
-    		"Type": "Editor",
-    		"LoadingPhase": "Default"
 		}
 	]
 }

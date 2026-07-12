@@ -11,7 +11,7 @@
  * and description without touching code).
  */
 UCLASS(BlueprintType)
-class QUESTCORERUNTIME_API UQuestDefinition : public UDataAsset
+class QUESTCORE_API UQuestDefinition : public UDataAsset
 {
 	GENERATED_BODY()
 

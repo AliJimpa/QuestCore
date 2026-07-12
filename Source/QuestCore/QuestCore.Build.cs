@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class QuestCoreRuntime : ModuleRules
+public class QuestCore : ModuleRules
 {
-	public QuestCoreRuntime(ReadOnlyTargetRules Target) : base(Target)
+	public QuestCore(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 

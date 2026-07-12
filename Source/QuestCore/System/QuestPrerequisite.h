@@ -10,7 +10,7 @@
  * "available" once all of its prerequisites are satisfied.
  */
 UCLASS(Abstract, Blueprintable, EditInlineNew, DefaultToInstanced)
-class QUESTCORERUNTIME_API UQuestPrerequisite : public UObject
+class QUESTCORE_API UQuestPrerequisite : public UObject
 {
 	GENERATED_BODY()
 

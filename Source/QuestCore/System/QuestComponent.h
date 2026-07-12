@@ -39,7 +39,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnQuestStateChanged, UQuestComponen
  * the next Order once every objective in the current group is Done.
  */
 UCLASS(ClassGroup = (Quest), meta = (BlueprintSpawnableComponent))
-class QUESTCORERUNTIME_API UQuestComponent : public UActorComponent
+class QUESTCORE_API UQuestComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
