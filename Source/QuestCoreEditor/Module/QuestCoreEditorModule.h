@@ -12,5 +12,5 @@ public:
 
 private:
 	EAssetTypeCategories::Type QuestAssetCategory = EAssetTypeCategories::Misc;
-	TSharedPtr<class FAssetTypeActions_QuestDefinition> QuestDefinitionAssetTypeActions;
+	//TSharedPtr<class FAssetTypeActions_QuestDefinition> QuestDefinitionAssetTypeActions;
 };

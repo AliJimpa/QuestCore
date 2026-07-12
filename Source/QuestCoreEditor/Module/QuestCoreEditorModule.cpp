@@ -2,7 +2,7 @@
 #include "AssetToolsModule.h"
 #include "IAssetTools.h"
 #include "Engine/QuestDebug.h"
-#include "AssetTypeAction/AssetTypeActions_QuestDefinition.h"
+//#include "AssetTypeAction/AssetTypeActions_QuestDefinition.h"
 
 
 #define LOCTEXT_NAMESPACE "FQuestCoreEditorModule"
@@ -17,8 +17,8 @@ void FQuestCoreEditorModule::StartupModule()
 		FName(TEXT("QuestCore")),
 		LOCTEXT("QuestCoreAssetCategory", "Quest"));
 
-	QuestDefinitionAssetTypeActions = MakeShared<FAssetTypeActions_QuestDefinition>(QuestAssetCategory);
-	AssetTools.RegisterAssetTypeActions(QuestDefinitionAssetTypeActions.ToSharedRef());
+	// QuestDefinitionAssetTypeActions = MakeShared<FAssetTypeActions_QuestDefinition>(QuestAssetCategory);
+	// AssetTools.RegisterAssetTypeActions(QuestDefinitionAssetTypeActions.ToSharedRef());
 }
 
 void FQuestCoreEditorModule::ShutdownModule()
@@ -26,12 +26,12 @@ void FQuestCoreEditorModule::ShutdownModule()
 	if (FModuleManager::Get().IsModuleLoaded("AssetTools"))
 	{
 		IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
-		if (QuestDefinitionAssetTypeActions.IsValid())
-		{
-			AssetTools.UnregisterAssetTypeActions(QuestDefinitionAssetTypeActions.ToSharedRef());
-		}
+		// if (QuestDefinitionAssetTypeActions.IsValid())
+		// {
+		// 	AssetTools.UnregisterAssetTypeActions(QuestDefinitionAssetTypeActions.ToSharedRef());
+		// }
 	}
-	QuestDefinitionAssetTypeActions.Reset();
+	//QuestDefinitionAssetTypeActions.Reset();
 }
 
 #undef LOCTEXT_NAMESPACE
