@@ -37,51 +37,7 @@ void UQuestSubsystem::UnregisterQuest(UQuestComponent *Quest)
 	}
 }
 
-bool UQuestSubsystem::ActivateQuest(UQuestDefinition *Definition)
-{
-	UQuestComponent *Quest = FindQuestByDefinition(Definition);
-	if (!Quest || !Quest->ArePrerequisitesSatisfied())
-	{
-		return false;
-	}
 
-	Quest->ActivateQuest();
-	return true;
-}
-bool UQuestSubsystem::ActivateQuestById(FName QuestId)
-{
-	UQuestComponent *Quest = FindQuestById(QuestId);
-	if (!Quest || !Quest->ArePrerequisitesSatisfied())
-	{
-		return false;
-	}
-
-	Quest->ActivateQuest();
-	return true;
-}
-
-bool UQuestSubsystem::DeactivateQuest(UQuestDefinition *Definition)
-{
-	UQuestComponent *Quest = FindQuestByDefinition(Definition);
-	if (!Quest || !Quest->ArePrerequisitesSatisfied())
-	{
-		return false;
-	}
-
-	Quest->DeactivateQuest();
-	return true;
-}
-bool UQuestSubsystem::DeactivateQuestById(FName QuestId)
-{
-	UQuestComponent *Quest = FindQuestById(QuestId);
-	if (!Quest || !Quest->ArePrerequisitesSatisfied())
-	{
-		return false;
-	}
-
-	Quest->DeactivateQuest();
-	return true;
-}
 
 TArray<UQuestComponent *> UQuestSubsystem::GetActiveQuests() const
 {
