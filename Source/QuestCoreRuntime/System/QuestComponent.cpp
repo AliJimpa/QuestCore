@@ -39,11 +39,13 @@ void UQuestComponent::EndObjectives()
 
 void UQuestComponent::SetState(const EQuestState NewState)
 {
+	const EQuestState LastState = State;
 	State = NewState;
 	switch (State)
 	{
 	case EQuestState::NotStarted:
-		EndObjectives();
+		if (LastState == EQuestState::Active)
+			EndObjectives();
 		break;
 	case EQuestState::Active:
 		BeginObjectives();
@@ -74,6 +76,15 @@ void UQuestComponent::ActivateQuest()
 	}
 
 	SetState(EQuestState::Active);
+
+	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
+	{
+		Subsystem->SubmitQuestActivation(this, true);
+	}
+	else
+	{
+		LOG_ERROR("Can't find UQuestSubsystem for Register");
+	}
 }
 
 void UQuestComponent::DeactivateQuest()
@@ -85,6 +96,15 @@ void UQuestComponent::DeactivateQuest()
 	}
 
 	SetState(EQuestState::NotStarted);
+
+	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
+	{
+		Subsystem->SubmitQuestActivation(this, false);
+	}
+	else
+	{
+		LOG_ERROR("Can't find UQuestSubsystem for Register");
+	}
 }
 
 bool UQuestComponent::ArePrerequisitesSatisfied() const

@@ -2,27 +2,6 @@
 #include "System/QuestComponent.h"
 #include "Engine/QuestDebug.h"
 
-void UQuestSubsystem::NotifyQuestUpdated(UQuestComponent *Quest)
-{
-	if (!Quest)
-	{
-		return;
-	}
-
-	switch (Quest->GetQuestState())
-	{
-	case EQuestState::Active:
-		ActiveQuests.AddUnique(Quest);
-		break;
-	case EQuestState::Completed:
-	case EQuestState::Failed:
-		ActiveQuests.Remove(Quest);
-		break;
-	default:
-		break;
-	}
-}
-
 void UQuestSubsystem::RegisterQuest(UQuestComponent *Quest)
 {
 	if (Quest)
@@ -34,7 +13,17 @@ void UQuestSubsystem::RegisterQuest(UQuestComponent *Quest)
 		LOG_ERROR("Quest Not Valid for Register!");
 	}
 }
-
+void UQuestSubsystem::SubmitQuestActivation(UQuestComponent *Quest, bool bIsActive)
+{
+	if (bIsActive)
+	{
+		ActiveQuests.AddUnique(Quest);
+	}
+	else
+	{
+		ActiveQuests.Remove(Quest);
+	}
+}
 void UQuestSubsystem::UnregisterQuest(UQuestComponent *Quest)
 {
 	if (Quest)
@@ -59,7 +48,6 @@ bool UQuestSubsystem::ActivateQuest(UQuestDefinition *Definition)
 	Quest->ActivateQuest();
 	return true;
 }
-
 bool UQuestSubsystem::ActivateQuestById(FName QuestId)
 {
 	UQuestComponent *Quest = FindQuestById(QuestId);
@@ -69,6 +57,29 @@ bool UQuestSubsystem::ActivateQuestById(FName QuestId)
 	}
 
 	Quest->ActivateQuest();
+	return true;
+}
+
+bool UQuestSubsystem::DeactivateQuest(UQuestDefinition *Definition)
+{
+	UQuestComponent *Quest = FindQuestByDefinition(Definition);
+	if (!Quest || !Quest->ArePrerequisitesSatisfied())
+	{
+		return false;
+	}
+
+	Quest->DeactivateQuest();
+	return true;
+}
+bool UQuestSubsystem::DeactivateQuestById(FName QuestId)
+{
+	UQuestComponent *Quest = FindQuestById(QuestId);
+	if (!Quest || !Quest->ArePrerequisitesSatisfied())
+	{
+		return false;
+	}
+
+	Quest->DeactivateQuest();
 	return true;
 }
 
