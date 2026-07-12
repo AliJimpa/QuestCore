@@ -9,7 +9,8 @@ enum class EQuestObjectiveState : uint8
 {
 	InProgress,
 	Done,
-	Failed
+	Failed,
+	Canceld,
 };
 
 /**
@@ -25,8 +26,8 @@ class QUESTCORERUNTIME_API UQuestObjective : public UObject
 public:
 	// Called by the owning Quest when this objective becomes active
 	UFUNCTION(BlueprintNativeEvent, Category = "Quest|Objective")
-	void Begin();
-	virtual void Begin_Implementation() {}
+	void Begin(AActor *Owner, UQuestDefinition *Defination);
+	virtual void Begin_Implementation(AActor *Owner, UQuestDefinition *Defination) {}
 
 	// Called by the owning Quest when this objective is done resolving
 	// (Done or Failed). Always called - use it for cleanup (unbinding etc).
@@ -42,7 +43,7 @@ public:
 	// Optional 0-1 progress value for UI.
 	UFUNCTION(BlueprintNativeEvent, Category = "Quest|Objective")
 	float GetProgress() const;
-	virtual float GetProgress_Implementation() const { return 0.f; }
+	virtual float GetProgress_Implementation() const { return 1; }
 
 #if WITH_EDITOR
 	// Friendly name shown in editor arrays, override in children if useful.

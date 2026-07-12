@@ -25,7 +25,7 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Quest")
 	int32 RequiredKills = 1;
 
-	virtual void Begin_Implementation() override;
+	virtual void Begin_Implementation(AActor *Owner, UQuestDefinition *Defination) override;
 	virtual void End_Implementation() override;
 	virtual float GetProgress_Implementation() const override;
 

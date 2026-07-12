@@ -16,20 +16,6 @@ enum class EQuestState : uint8
 	Failed
 };
 
-USTRUCT(BlueprintType)
-struct FQuestObjectiveEntry
-{
-	GENERATED_BODY()
-
-	UPROPERTY(EditAnywhere, Category = "ObjectiveEntry")
-	int32 Order = 0;
-
-	// Objectives that share the same Order are checked as a group -
-	// all of them must resolve Done before the quest advances.
-	UPROPERTY(EditAnywhere, Instanced, Category = "ObjectiveEntry")
-	TObjectPtr<UQuestObjective> Objective = nullptr;
-};
-
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnQuestStateChanged, UQuestComponent *, Quest);
 
 /**
@@ -48,32 +34,25 @@ protected:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 private:
-	void BeginCurrentGroup();
-	void EndCurrentGroup();
-	void AdvanceOrFinish();
+	void BeginObjectives();
+	void SetState(const EQuestState NewState);
+	void EndObjectives();
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Quest")
 	TObjectPtr<UQuestDefinition> QuestDefinition;
-
 	UPROPERTY(EditAnywhere, Instanced, Category = "Quest")
 	TArray<TObjectPtr<UQuestPrerequisite>> Prerequisites;
-
-	UPROPERTY(EditAnywhere, Category = "Quest")
-	TArray<FQuestObjectiveEntry> Objectives;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Instanced, Category = "Quest")
+	mutable TArray<TObjectPtr<UQuestObjective>> Objectives;
 
 	UPROPERTY(VisibleAnywhere, AdvancedDisplay, Category = "Quest")
 	EQuestState State = EQuestState::NotStarted;
 
-	UPROPERTY(VisibleAnywhere, AdvancedDisplay, Category = "Quest")
-	int32 CurrentOrder = 0;
-
 	UPROPERTY(BlueprintAssignable, Category = "Quest|Events")
 	FOnQuestStateChanged OnQuestCompleted;
-
 	UPROPERTY(BlueprintAssignable, Category = "Quest|Events")
 	FOnQuestStateChanged OnQuestFailed;
-
 	UPROPERTY(BlueprintAssignable, Category = "Quest|Events")
 	FOnQuestStateChanged OnQuestUpdated;
 
@@ -83,31 +62,44 @@ protected:
 
 public:
 	// Starts the quest: moves to Active, begins the first objective group.
-	UFUNCTION(BlueprintCallable, Category = "Quest")
+	UFUNCTION(BlueprintCallable, Category = "Quest|Functions")
 	void ActivateQuest();
+
+	UFUNCTION(BlueprintCallable, Category = "Quest|Functions")
+	void DeactivateQuest();
 
 	// Called externally (or by an objective's owner) to re-evaluate the
 	// current objective group. Advances order / completes / fails the quest.
-	UFUNCTION(BlueprintCallable, Category = "Quest")
+	UFUNCTION(BlueprintCallable, Category = "Quest|Functions")
 	void UpdateQuest();
 
-	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
-	TArray<UQuestObjective *> GetGroupObjectives(int32 Order) const;
-
-	// Convenience passthrough so existing FName-based lookups keep working.
-	UFUNCTION(BlueprintPure, Category = "Quest")
-	FName GetQuestId() const { return QuestDefinition ? QuestDefinition->QuestId : NAME_None; }
-
-	UFUNCTION(BlueprintPure, Category = "Quest")
-	EQuestState GetQuestState() const { return State; }
-
-	UFUNCTION(BlueprintPure, Category = "Quest")
-	int32 GetCurrentOrder() const { return CurrentOrder; }
-
-	UFUNCTION(BlueprintPure, Category = "Quest")
+	UFUNCTION(BlueprintPure, Category = "Quest|Status")
 	bool ArePrerequisitesSatisfied() const;
 
-	// Returns the overall 0-1 progress of the current objective group.
-	UFUNCTION(BlueprintPure, Category = "Quest")
-	float GetCurrentGroupProgress() const;
+	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
+	bool IsQuestActive() const { return State != EQuestState::NotStarted; }
+	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
+	bool IsQuestCompleted() const { return State == EQuestState::Completed; }
+	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
+	bool IsQuestFailed() const { return State == EQuestState::Failed; }
+	// Convenience passthrough so existing FName-based lookups keep working.
+	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
+	FName GetQuestId() const { return QuestDefinition ? QuestDefinition->QuestId : NAME_None; }
+	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
+	UQuestDefinition *GetQuestDefinition() const { return QuestDefinition; }
+
+	// Returns the quest's current state, forcing a re-evaluation first.
+	// NOTE: this has a side effect (UpdateQuest() can advance/complete/fail
+	// the quest and broadcast delegates) despite being marked BlueprintPure -
+	// Blueprint may call pure functions more than once per frame without
+	// your control, which could fire OnQuestUpdated/Completed/Failed more
+	// often than expected. Consider BlueprintCallable instead if that matters.
+	UFUNCTION(BlueprintPure, Category = "Quest|Getter", meta = (ToolTip = "Re-evaluates the quest's current objective group, then returns the resulting quest state (NotStarted / Active / Completed / Failed)."))
+	EQuestState GetQuestState()
+	{
+		UpdateQuest();
+		return State;
+	}
+	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
+	float GetProgress() const;
 };

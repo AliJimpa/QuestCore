@@ -21,11 +21,41 @@ void UQuestComponent::BeginPlay()
 	}
 }
 
-void UQuestComponent::BeginCurrentGroup()
+void UQuestComponent::BeginObjectives()
 {
-	for (UQuestObjective *Objective : GetGroupObjectives(CurrentOrder))
+	for (UQuestObjective *Objective : Objectives)
 	{
-		Objective->Begin();
+		Objective->Begin(GetOwner(), QuestDefinition);
+	}
+}
+
+void UQuestComponent::EndObjectives()
+{
+	for (UQuestObjective *Objective : Objectives)
+	{
+		Objective->End();
+	}
+}
+
+void UQuestComponent::SetState(const EQuestState NewState)
+{
+	State = NewState;
+	switch (State)
+	{
+	case EQuestState::NotStarted:
+		EndObjectives();
+		break;
+	case EQuestState::Active:
+		BeginObjectives();
+		break;
+	case EQuestState::Completed:
+		EndObjectives();
+		OnQuestCompleted.Broadcast(this);
+		break;
+	case EQuestState::Failed:
+		EndObjectives();
+		OnQuestFailed.Broadcast(this);
+		break;
 	}
 }
 
@@ -33,22 +63,28 @@ void UQuestComponent::ActivateQuest()
 {
 	if (State == EQuestState::Active)
 	{
+		LOG("Quest already is Active.");
 		return;
 	}
 
 	if (!ArePrerequisitesSatisfied())
 	{
+		LOG_WARNING("Prerequisites not Satisfied.");
 		return;
 	}
 
-	State = EQuestState::Active;
-	CurrentOrder = 0;
-	BeginCurrentGroup();
+	SetState(EQuestState::Active);
+}
 
-	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
+void UQuestComponent::DeactivateQuest()
+{
+	if (State == EQuestState::NotStarted)
 	{
-		Subsystem->NotifyQuestUpdated(this);
+		LOG("Quest already is Deactive.");
+		return;
 	}
+
+	SetState(EQuestState::NotStarted);
 }
 
 bool UQuestComponent::ArePrerequisitesSatisfied() const
@@ -63,14 +99,6 @@ bool UQuestComponent::ArePrerequisitesSatisfied() const
 	return true;
 }
 
-void UQuestComponent::EndCurrentGroup()
-{
-	for (UQuestObjective *Objective : GetGroupObjectives(CurrentOrder))
-	{
-		Objective->End();
-	}
-}
-
 void UQuestComponent::UpdateQuest()
 {
 	if (State != EQuestState::Active)
@@ -78,18 +106,9 @@ void UQuestComponent::UpdateQuest()
 		return;
 	}
 
-	const TArray<UQuestObjective *> CurrentGroup = GetGroupObjectives(CurrentOrder);
-	if (CurrentGroup.Num() == 0)
-	{
-		// No objectives at this order - nothing left to do, treat as complete.
-		AdvanceOrFinish();
-		return;
-	}
-
 	bool bAnyFailed = false;
 	bool bAllDone = true;
-
-	for (const UQuestObjective *Objective : CurrentGroup)
+	for (const UQuestObjective *Objective : Objectives)
 	{
 		const EQuestObjectiveState ObjState = Objective->GetState();
 		if (ObjState == EQuestObjectiveState::Failed)
@@ -103,84 +122,35 @@ void UQuestComponent::UpdateQuest()
 		}
 	}
 
+	OnQuestUpdated.Broadcast(this);
+
 	if (bAnyFailed)
 	{
-		EndCurrentGroup();
-		State = EQuestState::Failed;
-		OnQuestFailed.Broadcast(this);
-	}
-	else if (bAllDone)
-	{
-		AdvanceOrFinish();
+		SetState(EQuestState::Failed);
 	}
 	else
 	{
-		OnQuestUpdated.Broadcast(this);
-	}
-
-	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
-	{
-		Subsystem->NotifyQuestUpdated(this);
-	}
-}
-
-TArray<UQuestObjective *> UQuestComponent::GetGroupObjectives(int32 Order) const
-{
-	TArray<UQuestObjective *> Result;
-	for (const FQuestObjectiveEntry &Entry : Objectives)
-	{
-		if (Entry.Order == Order && Entry.Objective)
+		if (bAllDone)
 		{
-			Result.Add(Entry.Objective);
+			SetState(EQuestState::Completed);
 		}
 	}
-	return Result;
 }
 
-void UQuestComponent::AdvanceOrFinish()
+float UQuestComponent::GetProgress() const
 {
-	EndCurrentGroup();
-
-	// Find the next distinct order greater than the current one.
-	int32 NextOrder = INT32_MAX;
-	for (const FQuestObjectiveEntry &Entry : Objectives)
-	{
-		if (Entry.Order > CurrentOrder && Entry.Order < NextOrder)
-		{
-			NextOrder = Entry.Order;
-		}
-	}
-
-	if (NextOrder == INT32_MAX)
-	{
-		State = EQuestState::Completed;
-		OnQuestCompleted.Broadcast(this);
-		return;
-	}
-
-	CurrentOrder = NextOrder;
-	BeginCurrentGroup();
-	OnQuestUpdated.Broadcast(this);
-}
-
-float UQuestComponent::GetCurrentGroupProgress() const
-{
-	const TArray<UQuestObjective *> CurrentGroup = GetGroupObjectives(CurrentOrder);
-	if (CurrentGroup.Num() == 0)
-	{
-		return 1.f;
-	}
-
 	float Total = 0.f;
-	for (const UQuestObjective *Objective : CurrentGroup)
+	for (const UQuestObjective *Objective : Objectives)
 	{
 		Total += Objective->GetProgress();
 	}
-	return Total / CurrentGroup.Num();
+	return Total / Objectives.Num();
 }
 
 void UQuestComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
+	DeactivateQuest();
+
 	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
 	{
 		Subsystem->UnregisterQuest(this);
