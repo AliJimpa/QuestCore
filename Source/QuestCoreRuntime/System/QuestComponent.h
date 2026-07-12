@@ -21,16 +21,16 @@ struct FQuestObjectiveEntry
 {
 	GENERATED_BODY()
 
+	UPROPERTY(EditAnywhere, Category = "ObjectiveEntry")
+	int32 Order = 0;
+
 	// Objectives that share the same Order are checked as a group -
 	// all of them must resolve Done before the quest advances.
-	UPROPERTY(EditAnywhere, Instanced, Category = "Quest")
+	UPROPERTY(EditAnywhere, Instanced, Category = "ObjectiveEntry")
 	TObjectPtr<UQuestObjective> Objective = nullptr;
-
-	UPROPERTY(EditAnywhere, Category = "Quest")
-	int32 Order = 0;
 };
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnQuestStateChanged, UQuestComponent*, Quest);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnQuestStateChanged, UQuestComponent *, Quest);
 
 /**
  * A Quest. Holds an ordered list of objective groups and evaluates
@@ -43,28 +43,60 @@ class QUESTCORERUNTIME_API UQuestComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
+protected:
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+private:
+	void BeginCurrentGroup();
+	void EndCurrentGroup();
+	void AdvanceOrFinish();
+
 public:
 	UPROPERTY(EditAnywhere, Category = "Quest")
 	TObjectPtr<UQuestDefinition> QuestDefinition;
 
-	// Convenience passthrough so existing FName-based lookups keep working.
-	UFUNCTION(BlueprintPure, Category = "Quest")
-	FName GetQuestId() const { return QuestDefinition ? QuestDefinition->QuestId : NAME_None; }
+	UPROPERTY(EditAnywhere, Instanced, Category = "Quest")
+	TArray<TObjectPtr<UQuestPrerequisite>> Prerequisites;
 
 	UPROPERTY(EditAnywhere, Category = "Quest")
 	TArray<FQuestObjectiveEntry> Objectives;
 
-	UPROPERTY(EditAnywhere, Instanced, Category = "Quest")
-	TArray<TObjectPtr<UQuestPrerequisite>> Prerequisites;
+	UPROPERTY(VisibleAnywhere, AdvancedDisplay, Category = "Quest")
+	EQuestState State = EQuestState::NotStarted;
 
-	UPROPERTY(BlueprintAssignable, Category = "Quest")
+	UPROPERTY(VisibleAnywhere, AdvancedDisplay, Category = "Quest")
+	int32 CurrentOrder = 0;
+
+	UPROPERTY(BlueprintAssignable, Category = "Quest|Events")
 	FOnQuestStateChanged OnQuestCompleted;
 
-	UPROPERTY(BlueprintAssignable, Category = "Quest")
+	UPROPERTY(BlueprintAssignable, Category = "Quest|Events")
 	FOnQuestStateChanged OnQuestFailed;
 
-	UPROPERTY(BlueprintAssignable, Category = "Quest")
+	UPROPERTY(BlueprintAssignable, Category = "Quest|Events")
 	FOnQuestStateChanged OnQuestUpdated;
+
+protected:
+	UPROPERTY(EditAnywhere, Category = "Quest|Setting")
+	bool bAutoActive = false;
+
+public:
+	// Starts the quest: moves to Active, begins the first objective group.
+	UFUNCTION(BlueprintCallable, Category = "Quest")
+	void ActivateQuest();
+
+	// Called externally (or by an objective's owner) to re-evaluate the
+	// current objective group. Advances order / completes / fails the quest.
+	UFUNCTION(BlueprintCallable, Category = "Quest")
+	void UpdateQuest();
+
+	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
+	TArray<UQuestObjective *> GetGroupObjectives(int32 Order) const;
+
+	// Convenience passthrough so existing FName-based lookups keep working.
+	UFUNCTION(BlueprintPure, Category = "Quest")
+	FName GetQuestId() const { return QuestDefinition ? QuestDefinition->QuestId : NAME_None; }
 
 	UFUNCTION(BlueprintPure, Category = "Quest")
 	EQuestState GetQuestState() const { return State; }
@@ -75,28 +107,7 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Quest")
 	bool ArePrerequisitesSatisfied() const;
 
-	// Starts the quest: moves to Active, begins the first objective group.
-	UFUNCTION(BlueprintCallable, Category = "Quest")
-	void ActivateQuest();
-
-	// Called externally (or by an objective's owner) to re-evaluate the
-	// current objective group. Advances order / completes / fails the quest.
-	UFUNCTION(BlueprintCallable, Category = "Quest")
-	void UpdateQuest();
-
 	// Returns the overall 0-1 progress of the current objective group.
 	UFUNCTION(BlueprintPure, Category = "Quest")
 	float GetCurrentGroupProgress() const;
-
-private:
-	TArray<UQuestObjective*> GetCurrentGroupObjectives() const;
-	void BeginCurrentGroup();
-	void EndCurrentGroup();
-	void AdvanceOrFinish();
-
-	UPROPERTY(VisibleInstanceOnly, Category = "Quest")
-	EQuestState State = EQuestState::NotStarted;
-
-	UPROPERTY(VisibleInstanceOnly, Category = "Quest")
-	int32 CurrentOrder = 0;
 };

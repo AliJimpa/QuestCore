@@ -1,29 +1,32 @@
 #include "QuestComponent.h"
-#include "Subsystem/QuestSubsystem.h"
+#include "SubSystem/QuestSubsystem.h"
+#include "Engine/QuestDebug.h"
 
-bool UQuestComponent::ArePrerequisitesSatisfied() const
+void UQuestComponent::BeginPlay()
 {
-	for (const UQuestPrerequisite* Prerequisite : Prerequisites)
+	Super::BeginPlay();
+
+	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
 	{
-		if (!Prerequisite || !Prerequisite->IsSatisfied())
-		{
-			return false;
-		}
+		Subsystem->RegisterQuest(this);
 	}
-	return true;
+	else
+	{
+		LOG_ERROR("Can't find UQuestSubsystem for Register");
+	}
+
+	if (bAutoActive)
+	{
+		ActivateQuest();
+	}
 }
 
-TArray<UQuestObjective*> UQuestComponent::GetCurrentGroupObjectives() const
+void UQuestComponent::BeginCurrentGroup()
 {
-	TArray<UQuestObjective*> Result;
-	for (const FQuestObjectiveEntry& Entry : Objectives)
+	for (UQuestObjective *Objective : GetGroupObjectives(CurrentOrder))
 	{
-		if (Entry.Order == CurrentOrder && Entry.Objective)
-		{
-			Result.Add(Entry.Objective);
-		}
+		Objective->Begin();
 	}
-	return Result;
 }
 
 void UQuestComponent::ActivateQuest()
@@ -42,23 +45,27 @@ void UQuestComponent::ActivateQuest()
 	CurrentOrder = 0;
 	BeginCurrentGroup();
 
-	if (UQuestSubsystem* Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
+	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
 	{
 		Subsystem->NotifyQuestUpdated(this);
 	}
 }
 
-void UQuestComponent::BeginCurrentGroup()
+bool UQuestComponent::ArePrerequisitesSatisfied() const
 {
-	for (UQuestObjective* Objective : GetCurrentGroupObjectives())
+	for (const UQuestPrerequisite *Prerequisite : Prerequisites)
 	{
-		Objective->Begin();
+		if (!Prerequisite || !Prerequisite->IsSatisfied())
+		{
+			return false;
+		}
 	}
+	return true;
 }
 
 void UQuestComponent::EndCurrentGroup()
 {
-	for (UQuestObjective* Objective : GetCurrentGroupObjectives())
+	for (UQuestObjective *Objective : GetGroupObjectives(CurrentOrder))
 	{
 		Objective->End();
 	}
@@ -71,7 +78,7 @@ void UQuestComponent::UpdateQuest()
 		return;
 	}
 
-	const TArray<UQuestObjective*> CurrentGroup = GetCurrentGroupObjectives();
+	const TArray<UQuestObjective *> CurrentGroup = GetGroupObjectives(CurrentOrder);
 	if (CurrentGroup.Num() == 0)
 	{
 		// No objectives at this order - nothing left to do, treat as complete.
@@ -82,7 +89,7 @@ void UQuestComponent::UpdateQuest()
 	bool bAnyFailed = false;
 	bool bAllDone = true;
 
-	for (const UQuestObjective* Objective : CurrentGroup)
+	for (const UQuestObjective *Objective : CurrentGroup)
 	{
 		const EQuestObjectiveState ObjState = Objective->GetState();
 		if (ObjState == EQuestObjectiveState::Failed)
@@ -111,10 +118,23 @@ void UQuestComponent::UpdateQuest()
 		OnQuestUpdated.Broadcast(this);
 	}
 
-	if (UQuestSubsystem* Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
+	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
 	{
 		Subsystem->NotifyQuestUpdated(this);
 	}
+}
+
+TArray<UQuestObjective *> UQuestComponent::GetGroupObjectives(int32 Order) const
+{
+	TArray<UQuestObjective *> Result;
+	for (const FQuestObjectiveEntry &Entry : Objectives)
+	{
+		if (Entry.Order == Order && Entry.Objective)
+		{
+			Result.Add(Entry.Objective);
+		}
+	}
+	return Result;
 }
 
 void UQuestComponent::AdvanceOrFinish()
@@ -123,7 +143,7 @@ void UQuestComponent::AdvanceOrFinish()
 
 	// Find the next distinct order greater than the current one.
 	int32 NextOrder = INT32_MAX;
-	for (const FQuestObjectiveEntry& Entry : Objectives)
+	for (const FQuestObjectiveEntry &Entry : Objectives)
 	{
 		if (Entry.Order > CurrentOrder && Entry.Order < NextOrder)
 		{
@@ -145,16 +165,30 @@ void UQuestComponent::AdvanceOrFinish()
 
 float UQuestComponent::GetCurrentGroupProgress() const
 {
-	const TArray<UQuestObjective*> CurrentGroup = GetCurrentGroupObjectives();
+	const TArray<UQuestObjective *> CurrentGroup = GetGroupObjectives(CurrentOrder);
 	if (CurrentGroup.Num() == 0)
 	{
 		return 1.f;
 	}
 
 	float Total = 0.f;
-	for (const UQuestObjective* Objective : CurrentGroup)
+	for (const UQuestObjective *Objective : CurrentGroup)
 	{
 		Total += Objective->GetProgress();
 	}
 	return Total / CurrentGroup.Num();
+}
+
+void UQuestComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
+	{
+		Subsystem->UnregisterQuest(this);
+	}
+	else
+	{
+		LOG_ERROR("Can't find UQuestSubsystem for Register");
+	}
+
+	Super::EndPlay(EndPlayReason);
 }

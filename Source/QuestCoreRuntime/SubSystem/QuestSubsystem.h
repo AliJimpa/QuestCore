@@ -17,34 +17,9 @@ UCLASS()
 class QUESTCORERUNTIME_API UQuestSubsystem : public UWorldSubsystem
 {
 	GENERATED_BODY()
-
 public:
-	// Called by a QuestComponent (e.g. BeginPlay) to make itself known to the system.
-	UFUNCTION(BlueprintCallable, Category = "Quest")
-	void RegisterQuest(UQuestComponent* Quest);
-
-	UFUNCTION(BlueprintCallable, Category = "Quest")
-	void UnregisterQuest(UQuestComponent* Quest);
-
-	// Quests whose prerequisites are satisfied but that aren't active/completed yet.
-	UFUNCTION(BlueprintCallable, Category = "Quest")
-	TArray<UQuestComponent*> GetAvailableQuests() const;
-
-	UFUNCTION(BlueprintCallable, Category = "Quest")
-	TArray<UQuestComponent*> GetActiveQuests() const;
-
-	UFUNCTION(BlueprintCallable, Category = "Quest")
-	UQuestComponent* FindQuestById(FName QuestId) const;
-
-	UFUNCTION(BlueprintCallable, Category = "Quest")
-	UQuestComponent* FindQuestByDefinition(UQuestDefinition* Definition) const;
-
-	// Player-facing entry point (RPG-style: player picks which available quest to start).
-	UFUNCTION(BlueprintCallable, Category = "Quest")
-	bool ActivateQuest(FName QuestId);
-
 	// Called by UQuestComponent whenever it changes state (activated, updated, completed, failed).
-	void NotifyQuestUpdated(UQuestComponent* Quest);
+	void NotifyQuestUpdated(UQuestComponent *Quest);
 
 private:
 	UPROPERTY()
@@ -52,4 +27,31 @@ private:
 
 	UPROPERTY()
 	TArray<TObjectPtr<UQuestComponent>> ActiveQuests;
+
+public:
+	// Called by a QuestComponent (e.g. BeginPlay) to make itself known to the system.
+	UFUNCTION(BlueprintCallable, Category = "Quest|Functions")
+	void RegisterQuest(UQuestComponent *Quest);
+
+	UFUNCTION(BlueprintCallable, Category = "Quest|Functions")
+	void UnregisterQuest(UQuestComponent *Quest);
+
+	UFUNCTION(BlueprintCallable, Category = "Quest")
+	bool ActivateQuest(UQuestDefinition *Definition);
+
+	UFUNCTION(BlueprintCallable, Category = "Quest")
+	bool ActivateQuestById(FName QuestId);
+
+	UFUNCTION(BlueprintCallable, Category = "Quest|Getter")
+	TArray<UQuestComponent *> GetActiveQuests() const;
+
+	// Quests whose prerequisites are satisfied but that aren't active/completed yet.
+	UFUNCTION(BlueprintCallable, Category = "Quest|Getter")
+	TArray<UQuestComponent *> GetAvailableQuests() const;
+
+	UFUNCTION(BlueprintCallable, Category = "Quest|Getter")
+	UQuestComponent *FindQuestById(FName QuestId) const;
+
+	UFUNCTION(BlueprintCallable, Category = "Quest|Getter")
+	UQuestComponent *FindQuestByDefinition(UQuestDefinition *Definition) const;
 };
