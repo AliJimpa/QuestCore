@@ -103,6 +103,15 @@ public:
 	}
 	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
 	float GetProgress() const;
+	/**
+	 * Returns the first objective still InProgress, in array order.
+	 * Since objectives no longer have an explicit Order/step grouping,
+	 * this is a simple "first unresolved" lookup - not a "current step"
+	 * concept. Returns nullptr if every objective has already resolved
+	 * (Done/Failed/Canceled) or the array is empty.
+	 */
+	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
+	UQuestObjective *GetCurrentObjective() const;
 	// Convenience passthrough so existing FName-based lookups keep working.
 	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
 	FName GetQuestId() const { return QuestDefinition ? QuestDefinition->QuestId : NAME_None; }

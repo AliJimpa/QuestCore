@@ -167,6 +167,18 @@ float UQuestComponent::GetProgress() const
 	return Total / Objectives.Num();
 }
 
+UQuestObjective *UQuestComponent::GetCurrentObjective() const
+{
+	for (UQuestObjective *Objective : Objectives)
+	{
+		if (Objective && Objective->GetState() == EQuestObjectiveState::InProgress)
+		{
+			return Objective;
+		}
+	}
+	return nullptr;
+}
+
 void UQuestComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	DeactivateQuest();
