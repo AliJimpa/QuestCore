@@ -12,15 +12,30 @@
  * the world's TimerManager (fires once) rather than a tick - still
  * fits the "no ticking" rule, since a single-shot timer isn't polling.
  */
-UCLASS(meta = (DisplayName = "Wait Duration"))
+UCLASS(meta = (DisplayName = "Wait"))
 class QUESTCORERUNTIME_API UQuestObjective_Timer : public UQuestObjective
 {
 	GENERATED_BODY()
 
+private:
+	EQuestObjectiveState CachedState = EQuestObjectiveState::InProgress;
+	FTimerHandle TimerHandle;
+
 public:
-	UPROPERTY(EditAnywhere, Category = "Quest")
+	UPROPERTY(EditAnywhere, Category = "Objective")
 	float Duration = 5.f;
 
+private:
+	UPROPERTY()
+	TWeakObjectPtr<AActor> OwnerActor;
+
+private:
+	void HandleTimerFinished()
+	{
+		CachedState = EQuestObjectiveState::Done;
+	}
+
+public:
 	virtual void Begin_Implementation(AActor *Owner, UQuestDefinition *Defination) override
 	{
 		OwnerActor = Owner;
@@ -49,16 +64,4 @@ public:
 		return 0.f;
 	}
 	virtual FString GetObjectiveDescription_Implementation() const override { return TEXT("Wait Duration"); }
-
-private:
-	void HandleTimerFinished()
-	{
-		CachedState = EQuestObjectiveState::Done;
-	}
-
-	UPROPERTY()
-	TWeakObjectPtr<AActor> OwnerActor;
-
-	EQuestObjectiveState CachedState = EQuestObjectiveState::InProgress;
-	FTimerHandle TimerHandle;
 };

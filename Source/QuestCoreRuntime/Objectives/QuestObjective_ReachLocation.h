@@ -33,20 +33,21 @@ class QUESTCORERUNTIME_API UQuestObjective_ReachLocation : public UQuestObjectiv
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditAnywhere, Category = "Quest|Source")
+	UPROPERTY(EditAnywhere)
+	float AcceptRadius = 150.f;
+	
+	UPROPERTY(EditAnywhere, Category = "Source")
 	EQuestLocationSource SourceMode = EQuestLocationSource::OwnerActor;
-	UPROPERTY(EditAnywhere, Category = "Quest|Source", meta = (EditCondition = "SourceMode==EQuestLocationSource::PlayerActor", EditConditionHides))
+	UPROPERTY(EditAnywhere, Category = "Source", meta = (EditCondition = "SourceMode==EQuestLocationSource::PlayerActor", EditConditionHides))
 	int32 SourcePlayerIndex = 0;
 
-	UPROPERTY(EditAnywhere, Category = "Quest|Target")
+	UPROPERTY(EditAnywhere, Category = "Target")
 	EQuestLocationSource TargetMode = EQuestLocationSource::TargetActor;
-	UPROPERTY(EditAnywhere, Category = "Quest|Target", meta = (EditCondition = "TargetMode==EQuestLocationSource::PlayerActor", EditConditionHides))
+	UPROPERTY(EditAnywhere, Category = "Target", meta = (EditCondition = "TargetMode==EQuestLocationSource::PlayerActor", EditConditionHides))
 	int32 TargetPlayerIndex = 0;
 
-	UPROPERTY(EditAnywhere, Category = "Quest|Target", meta = (EditCondition = "TargetMode==EQuestLocationSource::TargetActor", EditConditionHides))
+	UPROPERTY(EditAnywhere, Category = "Target", meta = (EditCondition = "TargetMode==EQuestLocationSource::TargetActor", EditConditionHides))
 	TObjectPtr<AActor> TargetActor;
-	UPROPERTY(EditAnywhere, Category = "Quest")
-	float AcceptRadius = 150.f;
 
 private:
 	UPROPERTY()
