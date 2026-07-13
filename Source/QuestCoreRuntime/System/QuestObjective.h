@@ -18,7 +18,7 @@ enum class EQuestObjectiveState : uint8
  * Quest only ever talks to this interface - it never knows
  * whether an objective resolves by polling or by event.
  */
-UCLASS(Abstract, Blueprintable, EditInlineNew, DefaultToInstanced)
+UCLASS(Abstract, Blueprintable, EditInlineNew, DefaultToInstanced, CollapseCategories)
 class QUESTCORERUNTIME_API UQuestObjective : public UObject
 {
 	GENERATED_BODY()
