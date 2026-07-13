@@ -24,7 +24,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnQuestStateChanged, UQuestComponen
  * within the same Order all run in parallel; the quest advances to
  * the next Order once every objective in the current group is Done.
  */
-UCLASS(ClassGroup = (Quest), meta = (BlueprintSpawnableComponent))
+UCLASS(NotBlueprintable, BlueprintType, ClassGroup = (QuestCore), meta = (BlueprintSpawnableComponent, DisplayName = "Quest"))
 class QUESTCORERUNTIME_API UQuestComponent : public UActorComponent
 {
 	GENERATED_BODY()
