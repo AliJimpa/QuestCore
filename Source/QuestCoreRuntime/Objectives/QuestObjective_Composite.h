@@ -26,9 +26,10 @@ class QUESTCORERUNTIME_API UQuestObjective_Composite : public UQuestObjective
 	GENERATED_BODY()
 
 public:
+	UPROPERTY(EditAnywhere, Category = "Quest")
+	FString Description = TEXT("Composite Objective");
 	UPROPERTY(EditAnywhere, Instanced, Category = "Quest")
 	TArray<TObjectPtr<UQuestObjective>> ChildObjectives;
-
 	UPROPERTY(EditAnywhere, Category = "Quest")
 	EQuestCompositeMode Mode = EQuestCompositeMode::RequireAll;
 
@@ -124,5 +125,5 @@ public:
 
 		return Count > 0 ? Total / Count : 1.f;
 	}
-	virtual FString GetObjectiveDescription_Implementation() const override { return TEXT("Composite Objective"); }
+	virtual FString GetObjectiveDescription_Implementation() const override { return Description; }
 };
