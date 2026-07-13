@@ -48,10 +48,7 @@ public:
 		}
 		return 0.f;
 	}
-
-#if WITH_EDITOR
-	virtual FString GetObjectiveDescription() const override { return TEXT("Wait Duration"); }
-#endif
+	virtual FString GetObjectiveDescription_Implementation() const override { return TEXT("Wait Duration"); }
 
 private:
 	void HandleTimerFinished()

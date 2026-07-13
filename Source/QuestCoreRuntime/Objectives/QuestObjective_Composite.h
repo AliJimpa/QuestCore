@@ -124,8 +124,5 @@ public:
 
 		return Count > 0 ? Total / Count : 1.f;
 	}
-
-#if WITH_EDITOR
-	virtual FString GetObjectiveDescription() const override { return TEXT("Composite Objective"); }
-#endif
+	virtual FString GetObjectiveDescription_Implementation() const override { return TEXT("Composite Objective"); }
 };
