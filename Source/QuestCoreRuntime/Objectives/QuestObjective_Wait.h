@@ -5,7 +5,7 @@
 #include "TimerManager.h"
 #include "GameFramework/Actor.h"
 #include "Engine/World.h"
-#include "QuestObjective_Timer.generated.h"
+#include "QuestObjective_Wait.generated.h"
 
 /**
  * Complete after Duration seconds have passed since Begin(). Uses
@@ -13,7 +13,7 @@
  * fits the "no ticking" rule, since a single-shot timer isn't polling.
  */
 UCLASS(meta = (DisplayName = "Wait"))
-class QUESTCORERUNTIME_API UQuestObjective_Timer : public UQuestObjective
+class QUESTCORERUNTIME_API UQuestObjective_Wait : public UQuestObjective
 {
 	GENERATED_BODY()
 
@@ -43,7 +43,7 @@ public:
 
 		if (UWorld *World = Owner ? Owner->GetWorld() : nullptr)
 		{
-			World->GetTimerManager().SetTimer(TimerHandle, this, &UQuestObjective_Timer::HandleTimerFinished, Duration, false);
+			World->GetTimerManager().SetTimer(TimerHandle, this, &UQuestObjective_Wait::HandleTimerFinished, Duration, false);
 		}
 	}
 	virtual void End_Implementation() override

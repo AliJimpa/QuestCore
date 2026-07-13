@@ -35,17 +35,18 @@ class QUESTCORERUNTIME_API UQuestObjective_ReachLocation : public UQuestObjectiv
 public:
 	UPROPERTY(EditAnywhere)
 	float AcceptRadius = 150.f;
-	
+
 	UPROPERTY(EditAnywhere, Category = "Source")
 	EQuestLocationSource SourceMode = EQuestLocationSource::OwnerActor;
 	UPROPERTY(EditAnywhere, Category = "Source", meta = (EditCondition = "SourceMode==EQuestLocationSource::PlayerActor", EditConditionHides))
 	int32 SourcePlayerIndex = 0;
+	UPROPERTY(EditAnywhere, Category = "Source", meta = (EditCondition = "SourceMode==EQuestLocationSource::TargetActor", EditConditionHides))
+	TObjectPtr<AActor> SourceActor;
 
 	UPROPERTY(EditAnywhere, Category = "Target")
 	EQuestLocationSource TargetMode = EQuestLocationSource::TargetActor;
 	UPROPERTY(EditAnywhere, Category = "Target", meta = (EditCondition = "TargetMode==EQuestLocationSource::PlayerActor", EditConditionHides))
 	int32 TargetPlayerIndex = 0;
-
 	UPROPERTY(EditAnywhere, Category = "Target", meta = (EditCondition = "TargetMode==EQuestLocationSource::TargetActor", EditConditionHides))
 	TObjectPtr<AActor> TargetActor;
 
@@ -56,7 +57,7 @@ private:
 private:
 	// Resolves a mode to a live actor pointer - called every poll, so
 	// PlayerActor/TargetActor references always reflect their current state.
-	AActor *ResolveActor(EQuestLocationSource Mode, int32 PlayerIndex) const
+	AActor *ResolveActor(EQuestLocationSource Mode, int32 PlayerIndex, bool IsSource) const
 	{
 		switch (Mode)
 		{
@@ -72,7 +73,7 @@ private:
 		}
 
 		case EQuestLocationSource::TargetActor:
-			return TargetActor;
+			return IsSource ? SourceActor : TargetActor;
 		}
 
 		return nullptr;
@@ -85,8 +86,8 @@ public:
 	}
 	virtual EQuestObjectiveState GetState_Implementation() const override
 	{
-		AActor *Source = ResolveActor(SourceMode, SourcePlayerIndex);
-		AActor *Target = ResolveActor(TargetMode, TargetPlayerIndex);
+		AActor *Source = ResolveActor(SourceMode, SourcePlayerIndex, true);
+		AActor *Target = ResolveActor(TargetMode, TargetPlayerIndex, false);
 
 		// Either side unresolved (not spawned yet, player disconnected, etc)
 		// just means "not there yet", not a failure - keep waiting.
@@ -100,8 +101,8 @@ public:
 	}
 	virtual float GetProgress_Implementation() const override
 	{
-		AActor *Source = ResolveActor(SourceMode, SourcePlayerIndex);
-		AActor *Target = ResolveActor(TargetMode, TargetPlayerIndex);
+		AActor *Source = ResolveActor(SourceMode, SourcePlayerIndex, true);
+		AActor *Target = ResolveActor(TargetMode, TargetPlayerIndex, false);
 
 		if (!Source || !Target)
 		{
