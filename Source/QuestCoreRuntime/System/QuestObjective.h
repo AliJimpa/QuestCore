@@ -45,8 +45,7 @@ public:
 	float GetProgress() const;
 	virtual float GetProgress_Implementation() const { return 1; }
 
-#if WITH_EDITOR
-	// Friendly name shown in editor arrays, override in children if useful.
-	virtual FString GetObjectiveDescription() const { return GetClass()->GetName(); }
-#endif
+	UFUNCTION(BlueprintNativeEvent, Category = "Quest|Objective")
+	FString GetObjectiveDescription() const;
+	virtual FString GetObjectiveDescription_Implementation() const { return GetClass()->GetName(); }
 };
