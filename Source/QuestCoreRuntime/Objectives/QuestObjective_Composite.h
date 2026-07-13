@@ -20,7 +20,7 @@ enum class EQuestCompositeMode : uint8
  * the bomb" as one objective, instead of restructuring the quest's
  * order groups to express it.
  */
-UCLASS(meta = (DisplayName = "Composite Objective"))
+UCLASS(meta = (DisplayName = "Composite"))
 class QUESTCORERUNTIME_API UQuestObjective_Composite : public UQuestObjective
 {
 	GENERATED_BODY()
