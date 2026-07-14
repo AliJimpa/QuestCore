@@ -16,6 +16,6 @@ class QUESTCORERUNTIME_API UQuestPrerequisite : public UObject
 
 public:
 	UFUNCTION(BlueprintNativeEvent, Category = "Quest|Prerequisite")
-	bool IsSatisfied() const;
-	virtual bool IsSatisfied_Implementation() const { return true; }
+	bool IsSatisfied(AActor *Owner, UQuestDefinition *Defination) const;
+	virtual bool IsSatisfied_Implementation(AActor *Owner, UQuestDefinition *Defination) const { return true; }
 };
