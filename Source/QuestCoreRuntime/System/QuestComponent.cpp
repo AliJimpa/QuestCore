@@ -121,6 +121,30 @@ bool UQuestComponent::DeactivateQuest()
 
 bool UQuestComponent::ArePrerequisitesSatisfied() const
 {
+	if (QuestDefinition != nullptr)
+	{
+		if (QuestDefinition->QuestDependencies.Num() > 0)
+		{
+			if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
+			{
+				for (UQuestDefinition *Depended : QuestDefinition->QuestDependencies)
+				{
+					if (Depended == nullptr)
+						continue;
+					if (Subsystem->IsQuestCompletedByDefinition(Depended) == false)
+					{
+						LOG_WARNING("Quest(%s) need to Complite first there is dependency Quest", *Depended->GetName());
+						return false;
+					}
+				}
+			}
+			else
+			{
+				LOG_ERROR("Can't find UQuestSubsystem for CheckDependency");
+				return false;
+			}
+		}
+	}
 	for (const UQuestPrerequisite *Prerequisite : Prerequisites)
 	{
 		if (!Prerequisite || !Prerequisite->IsSatisfied())
@@ -219,12 +243,34 @@ void UQuestComponent::PostEditChangeProperty(FPropertyChangedEvent &PropertyChan
 	{
 		if (QuestDefinition->bOverrideAutoActive)
 		{
-			bAutoActive = QuestDefinition->bAutoActive;
+			if (bAutoActive != QuestDefinition->bAutoActive)
+			{
+				const FString OwnerName = GetOwner() ? GetOwner()->GetName() : GetName();
+				const FString Message = FString::Printf(
+					TEXT("[%s] AutoActive does not match QuestDefinition '%s' (Should be  %s)."),
+					*OwnerName, *QuestDefinition->GetName(), QuestDefinition->bAutoActive ? TEXT("True") : TEXT("False"));
+
+				if (GEngine)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, Message);
+				}
+			}
 		}
 
 		if (QuestDefinition->bOverrideAutoDestroy)
 		{
-			bAutoDestroy = QuestDefinition->bAutoDestroy;
+			if (bAutoDestroy != QuestDefinition->bAutoDestroy)
+			{
+				const FString OwnerName = GetOwner() ? GetOwner()->GetName() : GetName();
+				const FString Message = FString::Printf(
+					TEXT("[%s] AutoDestroy does not match QuestDefinition '%s' (Should be  %s)."),
+					*OwnerName, *QuestDefinition->GetName(), QuestDefinition->bAutoDestroy ? TEXT("True") : TEXT("False"));
+
+				if (GEngine)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, Message);
+				}
+			}
 		}
 
 		if (QuestDefinition->bOverrideObjective)
