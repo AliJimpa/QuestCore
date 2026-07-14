@@ -2,8 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
-#include "QuestObjective.h"
-#include "QuestPrerequisite.h"
 #include "QuestDefinition.h"
 #include "QuestComponent.generated.h"
 
@@ -32,6 +30,9 @@ class QUESTCORERUNTIME_API UQuestComponent : public UActorComponent
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent &PropertyChangedEvent) override;
+#endif
 
 private:
 	void BeginObjectives();
@@ -40,7 +41,7 @@ private:
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Quest")
-	TObjectPtr<UQuestDefinition> QuestDefinition;
+	UQuestDefinition *QuestDefinition;
 	UPROPERTY(EditAnywhere, Instanced, Category = "Quest")
 	TArray<TObjectPtr<UQuestPrerequisite>> Prerequisites;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Instanced, Category = "Quest")
@@ -59,27 +60,33 @@ public:
 protected:
 	UPROPERTY(EditAnywhere, Category = "Quest|Setting")
 	bool bAutoActive = false;
+	UPROPERTY(EditAnywhere, Category = "Quest|Setting", meta = (Tooltip = "If true after the quest Completed or Failed automaticly destroed actor"))
+	bool bAutoDestroy = false;
 
 public:
 	// Starts the quest: moves to Active, begins the first objective group.
 	UFUNCTION(BlueprintCallable, Category = "Quest|Functions")
-	void ActivateQuest();
+	bool ActivateQuest();
 	UFUNCTION(BlueprintCallable, Category = "Quest|Functions")
-	void DeactivateQuest();
+	bool DeactivateQuest();
 
-	// Called externally (or by an objective's owner) to re-evaluate the
-	// current objective group. Advances order / completes / fails the quest.
+	/**
+	 * Called externally (or by an objective's owner) to re-evaluate the
+	 * current objective group. Advances order / completes / fails the quest.
+	 */
 	UFUNCTION(BlueprintCallable, Category = "Quest|Functions")
 	void UpdateQuest();
 
 	UFUNCTION(BlueprintPure, Category = "Quest|Status")
 	bool ArePrerequisitesSatisfied() const;
 	UFUNCTION(BlueprintPure, Category = "Quest|Status")
-	bool IsQuestActive() const { return State != EQuestState::NotStarted; }
+	bool IsQuestStarted() const { return State != EQuestState::NotStarted; }
 	UFUNCTION(BlueprintPure, Category = "Quest|Status")
 	bool IsQuestCompleted() const { return State == EQuestState::Completed; }
 	UFUNCTION(BlueprintPure, Category = "Quest|Status")
 	bool IsQuestFailed() const { return State == EQuestState::Failed; }
+	UFUNCTION(BlueprintPure, Category = "Quest|Status")
+	bool IsQuestEnded() const { return State != EQuestState::NotStarted && State != EQuestState::Active; }
 
 	/**
 	 * Returns the currently stored quest state without re-evaluating objectives.

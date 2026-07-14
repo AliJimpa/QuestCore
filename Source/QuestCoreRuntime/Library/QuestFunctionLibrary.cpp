@@ -21,8 +21,7 @@ bool UQuestFunctionLibrary::ActivateQuestById(const UObject *WorldContextObject,
 		return false;
 	}
 
-	Quest->ActivateQuest();
-	return true;
+	return Quest->ActivateQuest();
 }
 
 bool UQuestFunctionLibrary::DeactivateQuestById(const UObject *WorldContextObject, FName QuestId)
@@ -41,8 +40,7 @@ bool UQuestFunctionLibrary::DeactivateQuestById(const UObject *WorldContextObjec
 		return false;
 	}
 
-	Quest->DeactivateQuest();
-	return true;
+	return Quest->DeactivateQuest();
 }
 
 bool UQuestFunctionLibrary::ActivateQuest(const UObject *WorldContextObject, UQuestDefinition *Definition)
@@ -61,8 +59,7 @@ bool UQuestFunctionLibrary::ActivateQuest(const UObject *WorldContextObject, UQu
 		return false;
 	}
 
-	Quest->ActivateQuest();
-	return true;
+	return Quest->ActivateQuest();
 }
 
 bool UQuestFunctionLibrary::DeactivateQuest(const UObject *WorldContextObject, UQuestDefinition *Definition)
@@ -81,8 +78,7 @@ bool UQuestFunctionLibrary::DeactivateQuest(const UObject *WorldContextObject, U
 		return false;
 	}
 
-	Quest->DeactivateQuest();
-	return true;
+	return Quest->DeactivateQuest();
 }
 
 TArray<UQuestComponent *> UQuestFunctionLibrary::GetActiveQuests(const UObject *WorldContextObject)

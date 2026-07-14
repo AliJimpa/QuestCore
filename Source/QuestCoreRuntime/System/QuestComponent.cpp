@@ -53,58 +53,70 @@ void UQuestComponent::SetState(const EQuestState NewState)
 	case EQuestState::Completed:
 		EndObjectives();
 		OnQuestCompleted.Broadcast(this);
+		if (bAutoDestroy)
+		{
+			GetOwner()->Destroy();
+		}
 		break;
 	case EQuestState::Failed:
 		EndObjectives();
 		OnQuestFailed.Broadcast(this);
+		if (bAutoDestroy)
+		{
+			GetOwner()->Destroy();
+		}
 		break;
 	}
 }
 
-void UQuestComponent::ActivateQuest()
+bool UQuestComponent::ActivateQuest()
 {
 	if (State == EQuestState::Active)
 	{
 		LOG("Quest already is Active.");
-		return;
+		return false;
 	}
 
 	if (!ArePrerequisitesSatisfied())
 	{
 		LOG_WARNING("Prerequisites not Satisfied.");
-		return;
+		return false;
 	}
-
-	SetState(EQuestState::Active);
 
 	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
 	{
+		SetState(EQuestState::Active);
 		Subsystem->SubmitQuestActivation(this, true);
 	}
 	else
 	{
 		LOG_ERROR("Can't find UQuestSubsystem for Register");
+		return false;
 	}
+
+	return true;
 }
 
-void UQuestComponent::DeactivateQuest()
+bool UQuestComponent::DeactivateQuest()
 {
 	if (State == EQuestState::NotStarted)
 	{
 		LOG("Quest already is Deactive.");
-		return;
+		return false;
 	}
-
-	SetState(EQuestState::NotStarted);
 
 	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
 	{
+		SetState(EQuestState::NotStarted);
 		Subsystem->SubmitQuestActivation(this, false);
 	}
 	else
 	{
 		LOG_ERROR("Can't find UQuestSubsystem for Register");
+		return false;
 	}
+
+	return true;
 }
 
 bool UQuestComponent::ArePrerequisitesSatisfied() const
@@ -197,3 +209,97 @@ void UQuestComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 	Super::EndPlay(EndPlayReason);
 }
+
+#if WITH_EDITOR
+void UQuestComponent::PostEditChangeProperty(FPropertyChangedEvent &PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	if (QuestDefinition != nullptr)
+	{
+		if (QuestDefinition->bOverrideAutoActive)
+		{
+			bAutoActive = QuestDefinition->bAutoActive;
+		}
+
+		if (QuestDefinition->bOverrideAutoDestroy)
+		{
+			bAutoDestroy = QuestDefinition->bAutoDestroy;
+		}
+
+		if (QuestDefinition->bOverrideObjective)
+		{
+			const TArray<TSubclassOf<UQuestObjective>> &ExpectedClasses = QuestDefinition->ObjectiveClasses;
+			const FString OwnerName = GetOwner() ? GetOwner()->GetName() : GetName();
+			if (Objectives.Num() != ExpectedClasses.Num())
+			{
+				const FString Message = FString::Printf(
+					TEXT("[%s] Objectives count (%d) does not match QuestDefinition '%s' (expects %d)."),
+					*OwnerName, Objectives.Num(), *QuestDefinition->GetName(), ExpectedClasses.Num());
+
+				if (GEngine)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, Message);
+				}
+				return;
+			}
+			for (int32 Index = 0; Index < Objectives.Num(); ++Index)
+			{
+				const UQuestObjective *Objective = Objectives[Index];
+				const TSubclassOf<UQuestObjective> ExpectedClass = ExpectedClasses[Index];
+
+				if (!Objective || !ExpectedClass || Objective->GetClass() != ExpectedClass)
+				{
+					const FString FoundName = Objective ? Objective->GetClass()->GetName() : TEXT("None");
+					const FString ExpectedName = ExpectedClass ? ExpectedClass->GetName() : TEXT("None");
+					const FString Message = FString::Printf(
+						TEXT("[%s] Objective[%d] mismatch - found '%s', expected '%s'."),
+						*OwnerName, Index, *FoundName, *ExpectedName);
+
+					if (GEngine)
+					{
+						GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, Message);
+					}
+				}
+			}
+		}
+
+		if (QuestDefinition->bOverridePrerequisit)
+		{
+			const TArray<TSubclassOf<UQuestPrerequisite>> &ExpectedClasses = QuestDefinition->PrerequisitClasses;
+			const FString OwnerName = GetOwner() ? GetOwner()->GetName() : GetName();
+			if (Prerequisites.Num() != ExpectedClasses.Num())
+			{
+				const FString Message = FString::Printf(
+					TEXT("[%s] Prerequisites count (%d) does not match QuestDefinition '%s' (expects %d)."),
+					*OwnerName, Prerequisites.Num(), *QuestDefinition->GetName(), ExpectedClasses.Num());
+
+				if (GEngine)
+				{
+					GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, Message);
+				}
+				return;
+			}
+			for (int32 Index = 0; Index < Prerequisites.Num(); ++Index)
+			{
+				const UQuestPrerequisite *Prerequisit = Prerequisites[Index];
+				const TSubclassOf<UQuestPrerequisite> ExpectedClass = ExpectedClasses[Index];
+
+				if (!Prerequisit || !ExpectedClass || Prerequisit->GetClass() != ExpectedClass)
+				{
+					const FString FoundName = Prerequisit ? Prerequisit->GetClass()->GetName() : TEXT("None");
+					const FString ExpectedName = ExpectedClass ? ExpectedClass->GetName() : TEXT("None");
+					const FString Message = FString::Printf(
+						TEXT("[%s] Prerequisit[%d] mismatch - found '%s', expected '%s'."),
+						*OwnerName, Index, *FoundName, *ExpectedName);
+
+					if (GEngine)
+					{
+						GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, Message);
+					}
+				}
+			}
+		}
+	}
+}
+#endif
