@@ -72,6 +72,11 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest|Permission", meta = (EditCondition = "bOverrideObjective"))
 	TArray<TSubclassOf<UQuestObjective>> ObjectiveClasses;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Event", meta = (Tooltip = "Set ActiveQuest when this quest completed"))
+	TArray<UQuestDefinition *> OnCompleted;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Event", meta = (Tooltip = "Set ActiveQuest when this quest failed"))
+	TArray<UQuestDefinition *> OnFailed;
+
 #if WITH_EDITOR
 	virtual void PostInitProperties() override
 	{

@@ -53,6 +53,23 @@ void UQuestComponent::SetState(const EQuestState NewState)
 	case EQuestState::Completed:
 		EndObjectives();
 		OnQuestCompleted.Broadcast(this);
+		if (QuestDefinition != nullptr)
+		{
+			if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
+			{
+				for (UQuestDefinition *QuestDef : QuestDefinition->OnCompleted)
+				{
+					if (UQuestComponent *QuestComp = Subsystem->FindQuestByDefinition(QuestDef))
+					{
+						QuestComp->ActivateQuest();
+					}
+				}
+			}
+			else
+			{
+				LOG_ERROR("Can't find UQuestSubsystem for Register");
+			}
+		}
 		if (bAutoDestroy)
 		{
 			GetOwner()->Destroy();
@@ -61,6 +78,23 @@ void UQuestComponent::SetState(const EQuestState NewState)
 	case EQuestState::Failed:
 		EndObjectives();
 		OnQuestFailed.Broadcast(this);
+		if (QuestDefinition != nullptr)
+		{
+			if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
+			{
+				for (UQuestDefinition *QuestDef : QuestDefinition->OnFailed)
+				{
+					if (UQuestComponent *QuestComp = Subsystem->FindQuestByDefinition(QuestDef))
+					{
+						QuestComp->ActivateQuest();
+					}
+				}
+			}
+			else
+			{
+				LOG_ERROR("Can't find UQuestSubsystem for Register");
+			}
+		}
 		if (bAutoDestroy)
 		{
 			GetOwner()->Destroy();
