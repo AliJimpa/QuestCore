@@ -11,7 +11,7 @@ bool UQuestFunctionLibrary::ActivateQuestById(const UObject *WorldContextObject,
 	UQuestSubsystem *Subsystem = World ? World->GetSubsystem<UQuestSubsystem>() : nullptr;
 	if (!Subsystem)
 	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
+		LOG_ERROR("Can't find UQuestSubsystem for ActiveQuest");
 		return false;
 	}
 
@@ -30,7 +30,7 @@ bool UQuestFunctionLibrary::DeactivateQuestById(const UObject *WorldContextObjec
 	UQuestSubsystem *Subsystem = World ? World->GetSubsystem<UQuestSubsystem>() : nullptr;
 	if (!Subsystem)
 	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
+		LOG_ERROR("Can't find UQuestSubsystem for Deactive");
 		return false;
 	}
 
@@ -49,7 +49,7 @@ bool UQuestFunctionLibrary::ActivateQuest(const UObject *WorldContextObject, UQu
 	UQuestSubsystem *Subsystem = World ? World->GetSubsystem<UQuestSubsystem>() : nullptr;
 	if (!Subsystem)
 	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
+		LOG_ERROR("Can't find UQuestSubsystem for ActiveQuest");
 		return false;
 	}
 
@@ -68,7 +68,7 @@ bool UQuestFunctionLibrary::DeactivateQuest(const UObject *WorldContextObject, U
 	UQuestSubsystem *Subsystem = World ? World->GetSubsystem<UQuestSubsystem>() : nullptr;
 	if (!Subsystem)
 	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
+		LOG_ERROR("Can't find UQuestSubsystem for Deactive");
 		return false;
 	}
 
@@ -87,7 +87,7 @@ TArray<UQuestComponent *> UQuestFunctionLibrary::GetActiveQuests(const UObject *
 	UQuestSubsystem *Subsystem = World ? World->GetSubsystem<UQuestSubsystem>() : nullptr;
 	if (!Subsystem)
 	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
+		LOG_ERROR("Can't find UQuestSubsystem for GetActiveQuests");
 		return TArray<UQuestComponent *>();
 	}
 
@@ -100,7 +100,7 @@ TArray<UQuestComponent *> UQuestFunctionLibrary::GetAvailableQuests(const UObjec
 	UQuestSubsystem *Subsystem = World ? World->GetSubsystem<UQuestSubsystem>() : nullptr;
 	if (!Subsystem)
 	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
+		LOG_ERROR("Can't find UQuestSubsystem for GetAvalibale");
 		return TArray<UQuestComponent *>();
 	}
 	return Subsystem->GetAvailableQuests();
@@ -112,7 +112,7 @@ UQuestComponent *UQuestFunctionLibrary::FindQuestById(const UObject *WorldContex
 	UQuestSubsystem *Subsystem = World ? World->GetSubsystem<UQuestSubsystem>() : nullptr;
 	if (!Subsystem)
 	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
+		LOG_ERROR("Can't find UQuestSubsystem for Find");
 		return nullptr;
 	}
 	return Subsystem->FindQuestById(QuestId);
@@ -124,7 +124,7 @@ UQuestComponent *UQuestFunctionLibrary::FindQuestByDefinition(const UObject *Wor
 	UQuestSubsystem *Subsystem = World ? World->GetSubsystem<UQuestSubsystem>() : nullptr;
 	if (!Subsystem)
 	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
+		LOG_ERROR("Can't find UQuestSubsystem for Find");
 		return nullptr;
 	}
 	return Subsystem->FindQuestByDefinition(Definition);
@@ -136,7 +136,7 @@ bool UQuestFunctionLibrary::IsQuestCompletedById(const UObject *WorldContextObje
 	UQuestSubsystem *Subsystem = World ? World->GetSubsystem<UQuestSubsystem>() : nullptr;
 	if (!Subsystem)
 	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
+		LOG_ERROR("Can't find UQuestSubsystem for CheckCompleted");
 		return false;
 	}
 	return Subsystem->IsQuestCompletedById(QuestId);
@@ -147,7 +147,7 @@ bool UQuestFunctionLibrary::IsQuestCompletedByDefinition(const UObject *WorldCon
 	UQuestSubsystem *Subsystem = World ? World->GetSubsystem<UQuestSubsystem>() : nullptr;
 	if (!Subsystem)
 	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
+		LOG_ERROR("Can't find UQuestSubsystem for CheckCompleted");
 		return false;
 	}
 	return Subsystem->IsQuestCompletedByDefinition(Definition);
@@ -158,7 +158,7 @@ bool UQuestFunctionLibrary::IsQuestFailedById(const UObject *WorldContextObject,
 	UQuestSubsystem *Subsystem = World ? World->GetSubsystem<UQuestSubsystem>() : nullptr;
 	if (!Subsystem)
 	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
+		LOG_ERROR("Can't find UQuestSubsystem for CheckFailed");
 		return false;
 	}
 	return Subsystem->IsQuestFailedById(QuestId);
@@ -169,7 +169,7 @@ bool UQuestFunctionLibrary::IsQuestFailedByDefinition(const UObject *WorldContex
 	UQuestSubsystem *Subsystem = World ? World->GetSubsystem<UQuestSubsystem>() : nullptr;
 	if (!Subsystem)
 	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
+		LOG_ERROR("Can't find UQuestSubsystem for CheckFailed");
 		return false;
 	}
 	return Subsystem->IsQuestFailedByDefinition(Definition);
