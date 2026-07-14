@@ -78,4 +78,40 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "Quest", meta = (WorldContext = "WorldContextObject"))
 	static UQuestComponent *FindQuestByDefinition(const UObject *WorldContextObject, UQuestDefinition *Definition);
+
+	/**
+	 * Checks whether the quest matching QuestId has completed.
+	 * @param WorldContextObject Any object in the target world (used to resolve the QuestSubsystem).
+	 * @param QuestId The QuestId to look up (see UQuestDefinition::QuestId).
+	 * @return true if a matching quest is registered and its state is Completed; false otherwise (including if not found).
+	 */
+	UFUNCTION(BlueprintPure, Category = "Quest", meta = (WorldContext = "WorldContextObject"))
+	static bool IsQuestCompletedById(const UObject *WorldContextObject, FName QuestId);
+
+	/**
+	 * Checks whether the quest matching Definition has completed.
+	 * @param WorldContextObject Any object in the target world (used to resolve the QuestSubsystem).
+	 * @param Definition The quest definition asset to look up.
+	 * @return true if a matching quest is registered and its state is Completed; false otherwise (including if not found).
+	 */
+	UFUNCTION(BlueprintPure, Category = "Quest", meta = (WorldContext = "WorldContextObject"))
+	static bool IsQuestCompletedByDefinition(const UObject *WorldContextObject, UQuestDefinition *Definition);
+
+	/**
+	 * Checks whether the quest matching QuestId has failed.
+	 * @param WorldContextObject Any object in the target world (used to resolve the QuestSubsystem).
+	 * @param QuestId The QuestId to look up (see UQuestDefinition::QuestId).
+	 * @return true if a matching quest is registered and its state is Failed; false otherwise (including if not found).
+	 */
+	UFUNCTION(BlueprintPure, Category = "Quest", meta = (WorldContext = "WorldContextObject"))
+	static bool IsQuestFailedById(const UObject *WorldContextObject, FName QuestId);
+
+	/**
+	 * Checks whether the quest matching Definition has failed.
+	 * @param WorldContextObject Any object in the target world (used to resolve the QuestSubsystem).
+	 * @param Definition The quest definition asset to look up.
+	 * @return true if a matching quest is registered and its state is Failed; false otherwise (including if not found).
+	 */
+	UFUNCTION(BlueprintPure, Category = "Quest", meta = (WorldContext = "WorldContextObject"))
+	static bool IsQuestFailedByDefinition(const UObject *WorldContextObject, UQuestDefinition *Definition);
 };

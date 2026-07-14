@@ -25,6 +25,10 @@ public:
 	TArray<UQuestComponent *> GetAvailableQuests() const;
 	UQuestComponent *FindQuestById(FName QuestId) const;
 	UQuestComponent *FindQuestByDefinition(UQuestDefinition *Definition) const;
+	bool IsQuestCompletedById(FName QuestId) const;
+	bool IsQuestCompletedByDefinition(UQuestDefinition *Definition) const;
+	bool IsQuestFailedById(FName QuestId) const;
+	bool IsQuestFailedByDefinition(UQuestDefinition *Definition) const;
 
 private:
 	UPROPERTY()

@@ -37,8 +37,6 @@ void UQuestSubsystem::UnregisterQuest(UQuestComponent *Quest)
 	}
 }
 
-
-
 TArray<UQuestComponent *> UQuestSubsystem::GetActiveQuests() const
 {
 	TArray<UQuestComponent *> Result;
@@ -85,4 +83,28 @@ UQuestComponent *UQuestSubsystem::FindQuestByDefinition(UQuestDefinition *Defini
 		}
 	}
 	return nullptr;
+}
+
+bool UQuestSubsystem::IsQuestCompletedById(FName QuestId) const
+{
+	const UQuestComponent *Quest = FindQuestById(QuestId);
+	return Quest && Quest->IsQuestCompleted();
+}
+
+bool UQuestSubsystem::IsQuestCompletedByDefinition(UQuestDefinition *Definition) const
+{
+	const UQuestComponent *Quest = FindQuestByDefinition(Definition);
+	return Quest && Quest->IsQuestCompleted();
+}
+
+bool UQuestSubsystem::IsQuestFailedById(FName QuestId) const
+{
+	const UQuestComponent *Quest = FindQuestById(QuestId);
+	return Quest && Quest->IsQuestFailed();
+}
+
+bool UQuestSubsystem::IsQuestFailedByDefinition(UQuestDefinition *Definition) const
+{
+	const UQuestComponent *Quest = FindQuestByDefinition(Definition);
+	return Quest && Quest->IsQuestFailed();
 }
