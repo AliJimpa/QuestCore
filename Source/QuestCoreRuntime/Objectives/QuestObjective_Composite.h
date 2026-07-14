@@ -34,14 +34,14 @@ public:
 	EQuestCompositeMode Mode = EQuestCompositeMode::RequireAll;
 
 protected:
-	virtual void Construction(AActor *Owner, UQuestDefinition *Defination) override
+	virtual void Construction(UQuestComponent *Quest, UQuestDefinition *Defination) override
 	{
-		Super::Construction(Owner, Defination);
+		Super::Construction(Quest, Defination);
 		for (UQuestObjective *Child : ChildObjectives)
 		{
 			if (Child)
 			{
-				Child->Construction(Owner, Defination);
+				Child->Construction(Quest, Defination);
 			}
 		}
 	}

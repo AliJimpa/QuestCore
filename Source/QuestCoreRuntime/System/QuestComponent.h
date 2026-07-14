@@ -5,6 +5,8 @@
 #include "QuestDefinition.h"
 #include "QuestComponent.generated.h"
 
+class UQuestObjective;
+
 UENUM(BlueprintType)
 enum class EQuestState : uint8
 {

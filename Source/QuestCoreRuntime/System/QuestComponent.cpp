@@ -1,5 +1,6 @@
 #include "QuestComponent.h"
 #include "SubSystem/QuestSubsystem.h"
+#include "QuestObjective.h"
 #include "Engine/QuestDebug.h"
 
 void UQuestComponent::BeginPlay()
@@ -10,7 +11,7 @@ void UQuestComponent::BeginPlay()
 	{
 		for (UQuestObjective *Objective : Objectives)
 		{
-			Objective->Construction(GetOwner(), QuestDefinition);
+			Objective->Construction(this, QuestDefinition);
 		}
 	}
 	else
@@ -195,7 +196,7 @@ bool UQuestComponent::ArePrerequisitesSatisfied() const
 	}
 	for (const UQuestPrerequisite *Prerequisite : Prerequisites)
 	{
-		if (!Prerequisite || !Prerequisite->IsSatisfied())
+		if (!Prerequisite || !Prerequisite->IsSatisfied(GetOwner(), QuestDefinition))
 		{
 			return false;
 		}

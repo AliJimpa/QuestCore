@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#include "QuestComponent.h"
 #include "QuestObjective.generated.h"
 
 UENUM(BlueprintType)
@@ -25,21 +26,33 @@ class QUESTCORERUNTIME_API UQuestObjective : public UObject
 
 private:
 	UPROPERTY()
-	TWeakObjectPtr<AActor> MyOwner;
+	TWeakObjectPtr<UQuestComponent> MyQuest;
 	UPROPERTY()
 	TWeakObjectPtr<UQuestDefinition> MyDefination;
 
 public:
 	UFUNCTION()
-	virtual void Construction(AActor *Owner, UQuestDefinition *Defination)
+	virtual void Construction(UQuestComponent *Quest, UQuestDefinition *Defination)
 	{
-		MyOwner = Owner;
+		MyQuest = Quest;
 		MyDefination = Defination;
 	}
 
 protected:
+	UFUNCTION(BlueprintCallable, Category = "Objective|Functions")
+	void UpdateQuest()
+	{
+		if (UQuestComponent *Quest = MyQuest.Get())
+		{
+			Quest->UpdateQuest();
+		}
+	}
 	UFUNCTION(BlueprintPure, Category = "Objective|Getter")
-	AActor *GetOwner() const { return MyOwner.Get(); }
+	AActor *GetOwner() const
+	{
+		const UQuestComponent *Quest = MyQuest.Get();
+		return Quest ? Quest->GetOwner() : nullptr;
+	}
 	UFUNCTION(BlueprintPure, Category = "Objective|Getter")
 	UQuestDefinition *GetDefination() const { return MyDefination.Get(); }
 

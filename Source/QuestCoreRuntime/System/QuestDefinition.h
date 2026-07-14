@@ -2,9 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
-#include "QuestObjective.h"
-#include "QuestPrerequisite.h"
 #include "QuestDefinition.generated.h"
+
+class UQuestObjective;
+class UQuestPrerequisite;
 
 UENUM(BlueprintType)
 enum class EQuestType : uint8

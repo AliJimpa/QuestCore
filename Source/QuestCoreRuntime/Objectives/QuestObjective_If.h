@@ -36,12 +36,12 @@ public:
     EQuestObjectiveState CompareToState = EQuestObjectiveState::Done;
 
 protected:
-    virtual void Construction(AActor *Owner, UQuestDefinition *Defination) override
+    virtual void Construction(UQuestComponent *Quest, UQuestDefinition *Defination) override
     {
-        Super::Construction(Owner, Defination);
+        Super::Construction(Quest, Defination);
         if (TargetObjective)
         {
-            TargetObjective->Construction(Owner, Defination);
+            TargetObjective->Construction(Quest, Defination);
         }
     }
 
