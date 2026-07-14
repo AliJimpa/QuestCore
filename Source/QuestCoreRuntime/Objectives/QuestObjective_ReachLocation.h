@@ -51,24 +51,21 @@ public:
 	TObjectPtr<AActor> TargetActor;
 
 private:
-	UPROPERTY()
-	TWeakObjectPtr<AActor> OwnerActor;
-
-private:
 	// Resolves a mode to a live actor pointer - called every poll, so
 	// PlayerActor/TargetActor references always reflect their current state.
 	AActor *ResolveActor(EQuestLocationSource Mode, int32 PlayerIndex, bool IsSource) const
 	{
+		AActor *Owner = GetOwner();
 		switch (Mode)
 		{
 		case EQuestLocationSource::OwnerActor:
-			return OwnerActor.Get();
+			return Owner;
 
 		case EQuestLocationSource::PlayerActor:
 		{
 			// Needs a world context - OwnerActor is the only actor we're
 			// guaranteed to have, so resolve the world through it.
-			UWorld *World = OwnerActor.IsValid() ? OwnerActor->GetWorld() : nullptr;
+			UWorld *World = Owner ? Owner->GetWorld() : nullptr;
 			return World ? UGameplayStatics::GetPlayerPawn(World, PlayerIndex) : nullptr;
 		}
 
@@ -80,10 +77,6 @@ private:
 	}
 
 public:
-	virtual void Begin_Implementation(AActor *Owner, UQuestDefinition *Defination) override
-	{
-		OwnerActor = Owner;
-	}
 	virtual EQuestObjectiveState GetState_Implementation() const override
 	{
 		AActor *Source = ResolveActor(SourceMode, SourcePlayerIndex, true);

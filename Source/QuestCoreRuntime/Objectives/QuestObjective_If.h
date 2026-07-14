@@ -35,11 +35,22 @@ public:
     UPROPERTY(EditAnywhere, Category = "Quest")
     EQuestObjectiveState CompareToState = EQuestObjectiveState::Done;
 
-    virtual void Begin_Implementation(AActor *Owner, UQuestDefinition *Defination) override
+protected:
+    virtual void Construction(AActor *Owner, UQuestDefinition *Defination) override
+    {
+        Super::Construction(Owner, Defination);
+        if (TargetObjective)
+        {
+            TargetObjective->Construction(Owner, Defination);
+        }
+    }
+
+public:
+    virtual void Begin_Implementation() override
     {
         if (TargetObjective)
         {
-            TargetObjective->Begin(Owner, Defination);
+            TargetObjective->Begin();
         }
     }
     virtual void End_Implementation() override

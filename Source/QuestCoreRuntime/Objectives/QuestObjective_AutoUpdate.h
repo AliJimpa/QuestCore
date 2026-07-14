@@ -33,35 +33,30 @@ public:
     float Duration = 1.f;
 
 private:
-    UPROPERTY()
-    TWeakObjectPtr<AActor> OwnerActor;
-    UPROPERTY()
-    TWeakObjectPtr<UQuestDefinition> CachedDefinition;
     FTimerHandle TimerHandle;
 
 private:
     void HandleTimerTick()
     {
-        UWorld *World = OwnerActor.IsValid() ? OwnerActor->GetWorld() : nullptr;
+        const AActor *Owner = GetOwner();
+        UWorld *World = Owner ? Owner->GetWorld() : nullptr;
         UQuestSubsystem *Subsystem = World ? World->GetSubsystem<UQuestSubsystem>() : nullptr;
 
-        if (!Subsystem || !CachedDefinition.IsValid())
+        if (!Subsystem || !GetDefination())
         {
             return;
         }
 
-        if (UQuestComponent *Quest = Subsystem->FindQuestByDefinition(CachedDefinition.Get()))
+        if (UQuestComponent *Quest = Subsystem->FindQuestByDefinition(GetDefination()))
         {
             Quest->UpdateQuest();
         }
     }
 
 protected:
-    virtual void Begin_Implementation(AActor *Owner, UQuestDefinition *Defination) override
+    virtual void Begin_Implementation() override
     {
-        OwnerActor = Owner;
-        CachedDefinition = Defination;
-
+        const AActor *Owner = GetOwner();
         if (UWorld *World = Owner ? Owner->GetWorld() : nullptr)
         {
             World->GetTimerManager().SetTimer(TimerHandle, this, &UQuestObjective_AutoUpdate::HandleTimerTick, Duration, /*bLoop=*/true);
@@ -69,7 +64,8 @@ protected:
     }
     virtual void End_Implementation() override
     {
-        if (UWorld *World = OwnerActor.IsValid() ? OwnerActor->GetWorld() : nullptr)
+        const AActor *Owner = GetOwner();
+        if (UWorld *World = Owner ? Owner->GetWorld() : nullptr)
         {
             World->GetTimerManager().ClearTimer(TimerHandle);
         }

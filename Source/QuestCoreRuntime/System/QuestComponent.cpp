@@ -6,6 +6,19 @@ void UQuestComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	if (QuestDefinition != nullptr)
+	{
+		for (UQuestObjective *Objective : Objectives)
+		{
+			Objective->Construction(GetOwner(), QuestDefinition);
+		}
+	}
+	else
+	{
+		LOG_ERROR("QuestDefinition is not valid");
+		return;
+	}
+
 	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
 	{
 		Subsystem->RegisterQuest(this);
@@ -13,6 +26,7 @@ void UQuestComponent::BeginPlay()
 	else
 	{
 		LOG_ERROR("Can't find UQuestSubsystem for Register");
+		return;
 	}
 
 	if (bAutoActive)
@@ -25,7 +39,7 @@ void UQuestComponent::BeginObjectives()
 {
 	for (UQuestObjective *Objective : Objectives)
 	{
-		Objective->Begin(GetOwner(), QuestDefinition);
+		Objective->Begin();
 	}
 }
 

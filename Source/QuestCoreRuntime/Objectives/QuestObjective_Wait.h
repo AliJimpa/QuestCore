@@ -26,21 +26,17 @@ public:
 	float Duration = 5.f;
 
 private:
-	UPROPERTY()
-	TWeakObjectPtr<AActor> OwnerActor;
-
-private:
 	void HandleTimerFinished()
 	{
 		CachedState = EQuestObjectiveState::Done;
 	}
 
 public:
-	virtual void Begin_Implementation(AActor *Owner, UQuestDefinition *Defination) override
+	virtual void Begin_Implementation() override
 	{
-		OwnerActor = Owner;
 		CachedState = EQuestObjectiveState::InProgress;
 
+		const AActor *Owner = GetOwner();
 		if (UWorld *World = Owner ? Owner->GetWorld() : nullptr)
 		{
 			World->GetTimerManager().SetTimer(TimerHandle, this, &UQuestObjective_Wait::HandleTimerFinished, Duration, false);
@@ -48,7 +44,8 @@ public:
 	}
 	virtual void End_Implementation() override
 	{
-		if (UWorld *World = OwnerActor.IsValid() ? OwnerActor->GetWorld() : nullptr)
+		const AActor *Owner = GetOwner();
+		if (UWorld *World = Owner ? Owner->GetWorld() : nullptr)
 		{
 			World->GetTimerManager().ClearTimer(TimerHandle);
 		}
@@ -56,7 +53,8 @@ public:
 	virtual EQuestObjectiveState GetState_Implementation() const override { return CachedState; }
 	virtual float GetProgress_Implementation() const override
 	{
-		if (UWorld *World = OwnerActor.IsValid() ? OwnerActor->GetWorld() : nullptr)
+		const AActor *Owner = GetOwner();
+		if (UWorld *World = Owner ? Owner->GetWorld() : nullptr)
 		{
 			const float Elapsed = World->GetTimerManager().GetTimerElapsed(TimerHandle);
 			return Duration > 0.f ? FMath::Clamp(Elapsed / Duration, 0.f, 1.f) : 1.f;

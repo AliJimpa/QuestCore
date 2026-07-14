@@ -33,13 +33,27 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Quest")
 	EQuestCompositeMode Mode = EQuestCompositeMode::RequireAll;
 
-	virtual void Begin_Implementation(AActor *Owner, UQuestDefinition *Defination) override
+protected:
+	virtual void Construction(AActor *Owner, UQuestDefinition *Defination) override
+	{
+		Super::Construction(Owner, Defination);
+		for (UQuestObjective *Child : ChildObjectives)
+		{
+			if (Child)
+			{
+				Child->Construction(Owner, Defination);
+			}
+		}
+	}
+
+public:
+	virtual void Begin_Implementation() override
 	{
 		for (UQuestObjective *Child : ChildObjectives)
 		{
 			if (Child)
 			{
-				Child->Begin(Owner, Defination);
+				Child->Begin();
 			}
 		}
 	}
