@@ -6,6 +6,7 @@
 #include "QuestComponent.generated.h"
 
 class UQuestObjective;
+class UQuestSubsystem;
 
 UENUM(BlueprintType)
 enum class EQuestState : uint8
@@ -32,6 +33,7 @@ class QUESTCORERUNTIME_API UQuestComponent : public UActorComponent
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	UQuestSubsystem *GetQuestSubsystem() const;
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(FPropertyChangedEvent &PropertyChangedEvent) override;
 #endif
@@ -40,6 +42,9 @@ private:
 	void BeginObjectives();
 	void SetState(const EQuestState NewState);
 	void EndObjectives();
+
+private:
+	mutable TWeakObjectPtr<UQuestSubsystem> CachedSubsystem;
 
 public:
 	UPROPERTY(EditAnywhere, Category = "Quest")
@@ -124,7 +129,7 @@ public:
 	 * (Done/Failed/Canceled) or the array is empty.
 	 */
 	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
-	UQuestObjective* GetCurrentObjective() const;
+	UQuestObjective *GetCurrentObjective() const;
 	// Convenience passthrough so existing FName-based lookups keep working.
 	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
 	FName GetQuestId() const { return QuestDefinition ? QuestDefinition->QuestId : NAME_None; }

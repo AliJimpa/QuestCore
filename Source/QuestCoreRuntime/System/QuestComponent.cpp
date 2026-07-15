@@ -20,20 +20,30 @@ void UQuestComponent::BeginPlay()
 		return;
 	}
 
-	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
-	{
-		Subsystem->RegisterQuest(this);
-	}
-	else
-	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
-		return;
-	}
+	GetQuestSubsystem()->RegisterQuest(this);
 
 	if (bAutoActive)
 	{
 		ActivateQuest();
 	}
+}
+
+UQuestSubsystem *UQuestComponent::GetQuestSubsystem() const
+{
+	if (!CachedSubsystem.IsValid())
+	{
+		if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
+		{
+			CachedSubsystem = Subsystem;
+		}
+		else
+		{
+			LOG_ERROR("Can't find UQuestSubsystem for Register");
+			return nullptr;
+		}
+	}
+
+	return CachedSubsystem.Get();
 }
 
 void UQuestComponent::BeginObjectives()
@@ -56,6 +66,7 @@ void UQuestComponent::SetState(const EQuestState NewState)
 {
 	const EQuestState LastState = State;
 	State = NewState;
+	GetQuestSubsystem()->OnQuestStateChanged.Broadcast(this);
 	switch (State)
 	{
 	case EQuestState::NotStarted:
@@ -70,19 +81,12 @@ void UQuestComponent::SetState(const EQuestState NewState)
 		OnQuestCompleted.Broadcast(this);
 		if (QuestDefinition != nullptr)
 		{
-			if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
+			for (UQuestDefinition *QuestDef : QuestDefinition->OnCompleted)
 			{
-				for (UQuestDefinition *QuestDef : QuestDefinition->OnCompleted)
+				if (UQuestComponent *QuestComp = GetQuestSubsystem()->FindQuestByDefinition(QuestDef))
 				{
-					if (UQuestComponent *QuestComp = Subsystem->FindQuestByDefinition(QuestDef))
-					{
-						QuestComp->ActivateQuest();
-					}
+					QuestComp->ActivateQuest();
 				}
-			}
-			else
-			{
-				LOG_ERROR("Can't find UQuestSubsystem for Register");
 			}
 		}
 		if (bAutoDestroy)
@@ -95,19 +99,12 @@ void UQuestComponent::SetState(const EQuestState NewState)
 		OnQuestFailed.Broadcast(this);
 		if (QuestDefinition != nullptr)
 		{
-			if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
+			for (UQuestDefinition *QuestDef : QuestDefinition->OnFailed)
 			{
-				for (UQuestDefinition *QuestDef : QuestDefinition->OnFailed)
+				if (UQuestComponent *QuestComp = GetQuestSubsystem()->FindQuestByDefinition(QuestDef))
 				{
-					if (UQuestComponent *QuestComp = Subsystem->FindQuestByDefinition(QuestDef))
-					{
-						QuestComp->ActivateQuest();
-					}
+					QuestComp->ActivateQuest();
 				}
-			}
-			else
-			{
-				LOG_ERROR("Can't find UQuestSubsystem for Register");
 			}
 		}
 		if (bAutoDestroy)
@@ -132,16 +129,8 @@ bool UQuestComponent::ActivateQuest()
 		return false;
 	}
 
-	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
-	{
-		SetState(EQuestState::Active);
-		Subsystem->SubmitQuestActivation(this, true);
-	}
-	else
-	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
-		return false;
-	}
+	SetState(EQuestState::Active);
+	GetQuestSubsystem()->SubmitQuestActivation(this, true);
 
 	return true;
 }
@@ -154,16 +143,8 @@ bool UQuestComponent::DeactivateQuest()
 		return false;
 	}
 
-	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
-	{
-		SetState(EQuestState::NotStarted);
-		Subsystem->SubmitQuestActivation(this, false);
-	}
-	else
-	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
-		return false;
-	}
+	SetState(EQuestState::NotStarted);
+	GetQuestSubsystem()->SubmitQuestActivation(this, false);
 
 	return true;
 }
@@ -174,23 +155,15 @@ bool UQuestComponent::ArePrerequisitesSatisfied() const
 	{
 		if (QuestDefinition->QuestDependencies.Num() > 0)
 		{
-			if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
+			for (UQuestDefinition *Depended : QuestDefinition->QuestDependencies)
 			{
-				for (UQuestDefinition *Depended : QuestDefinition->QuestDependencies)
+				if (Depended == nullptr)
+					continue;
+				if (GetQuestSubsystem()->IsQuestCompletedByDefinition(Depended) == false)
 				{
-					if (Depended == nullptr)
-						continue;
-					if (Subsystem->IsQuestCompletedByDefinition(Depended) == false)
-					{
-						LOG_WARNING("Quest(%s) need to Complite first there is dependency Quest", *Depended->GetName());
-						return false;
-					}
+					LOG_WARNING("Quest(%s) need to Complite first there is dependency Quest", *Depended->GetName());
+					return false;
 				}
-			}
-			else
-			{
-				LOG_ERROR("Can't find UQuestSubsystem for CheckDependency");
-				return false;
 			}
 		}
 	}
@@ -282,14 +255,7 @@ void UQuestComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	DeactivateQuest();
 
-	if (UQuestSubsystem *Subsystem = GetWorld() ? GetWorld()->GetSubsystem<UQuestSubsystem>() : nullptr)
-	{
-		Subsystem->UnregisterQuest(this);
-	}
-	else
-	{
-		LOG_ERROR("Can't find UQuestSubsystem for Register");
-	}
+	GetQuestSubsystem()->UnregisterQuest(this);
 
 	Super::EndPlay(EndPlayReason);
 }
