@@ -2,9 +2,9 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
+#include "System/QuestComponent.h"
 #include "QuestSubsystem.generated.h"
 
-class UQuestComponent;
 class UQuestDefinition;
 
 /**
@@ -18,9 +18,9 @@ class QUESTCORERUNTIME_API UQuestSubsystem : public UWorldSubsystem
 {
 	GENERATED_BODY()
 public:
-	void RegisterQuest(UQuestComponent *Quest);
+	bool RegisterQuest(UQuestComponent *Quest);
 	void SubmitQuestActivation(UQuestComponent *Quest, bool bIsActive);
-	void UnregisterQuest(UQuestComponent *Quest);
+	bool UnregisterQuest(UQuestComponent *Quest);
 	TArray<UQuestComponent *> GetActiveQuests() const;
 	TArray<UQuestComponent *> GetAvailableQuests() const;
 	UQuestComponent *FindQuestById(FName QuestId) const;
@@ -35,4 +35,8 @@ private:
 	TArray<TObjectPtr<UQuestComponent>> RegisteredQuests;
 	UPROPERTY()
 	TArray<TObjectPtr<UQuestComponent>> ActiveQuests;
+
+public:
+	UPROPERTY(BlueprintAssignable, Category = "Quest|Events")
+	FOnQuestStateChanged OnQuestStateChanged;
 };

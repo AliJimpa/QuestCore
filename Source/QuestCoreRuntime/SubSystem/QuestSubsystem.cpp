@@ -2,16 +2,32 @@
 #include "System/QuestComponent.h"
 #include "Engine/QuestDebug.h"
 
-void UQuestSubsystem::RegisterQuest(UQuestComponent *Quest)
+bool UQuestSubsystem::RegisterQuest(UQuestComponent *Quest)
 {
-	if (Quest)
-	{
-		RegisteredQuests.AddUnique(Quest);
-	}
-	else
+	if (!Quest)
 	{
 		LOG_ERROR("Quest Not Valid for Register!");
+		return false;
 	}
+
+	const FName QuestId = Quest->GetQuestId();
+	if (UQuestComponent *Existing = FindQuestById(QuestId))
+	{
+		const FString Message = FString::Printf(
+			TEXT("Quest registration failed: QuestId '%s' is already registered (by '%s')."),
+			*QuestId.ToString(),
+			Existing->GetOwner() ? *Existing->GetOwner()->GetName() : TEXT("Unknown"));
+
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, Message);
+		}
+		LOG_ERROR("%s", *Message);
+		return false;
+	}
+
+	RegisteredQuests.AddUnique(Quest);
+	return true;
 }
 void UQuestSubsystem::SubmitQuestActivation(UQuestComponent *Quest, bool bIsActive)
 {
@@ -24,16 +40,18 @@ void UQuestSubsystem::SubmitQuestActivation(UQuestComponent *Quest, bool bIsActi
 		ActiveQuests.Remove(Quest);
 	}
 }
-void UQuestSubsystem::UnregisterQuest(UQuestComponent *Quest)
+bool UQuestSubsystem::UnregisterQuest(UQuestComponent *Quest)
 {
 	if (Quest)
 	{
 		RegisteredQuests.Remove(Quest);
 		ActiveQuests.Remove(Quest);
+		return true;
 	}
 	else
 	{
 		LOG_ERROR("Quest Not Valid for Unregister!");
+		return false;
 	}
 }
 
