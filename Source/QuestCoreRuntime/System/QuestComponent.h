@@ -90,6 +90,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Quest|Status")
 	bool IsQuestEnded() const { return State != EQuestState::NotStarted && State != EQuestState::Active; }
 
+	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
+	int32 GetMaxObjective() const { return Objectives.Num(); }
+	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
+	int32 GetCurrentObjectiveIndex() const;
 	/**
 	 * Returns the currently stored quest state without re-evaluating objectives.
 	 * This does not update the quest or trigger any delegates.
@@ -120,7 +124,7 @@ public:
 	 * (Done/Failed/Canceled) or the array is empty.
 	 */
 	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
-	int32 GetCurrentObjective() const;
+	UQuestObjective* GetCurrentObjective() const;
 	// Convenience passthrough so existing FName-based lookups keep working.
 	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
 	FName GetQuestId() const { return QuestDefinition ? QuestDefinition->QuestId : NAME_None; }
