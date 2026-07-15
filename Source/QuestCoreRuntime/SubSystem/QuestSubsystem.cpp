@@ -72,6 +72,108 @@ bool UQuestSubsystem::UnregisterQuest(UQuestComponent *Quest)
 	}
 }
 
+void UQuestSubsystem::LoadQuestData()
+{
+	PendingLoadedStates.Empty();
+
+	const UQuestCoreSettings *Settings = GetDefault<UQuestCoreSettings>();
+
+	if (!UGameplayStatics::DoesSaveGameExist(Settings->SaveSlotName, Settings->SaveUserIndex))
+	{
+		return;
+	}
+
+	// Cast<UQuestSaveGame> still works even if the actual loaded object
+	// is a project-specific subclass - we only need the base fields here.
+	if (UQuestSaveGame *SaveGame = Cast<UQuestSaveGame>(UGameplayStatics::LoadGameFromSlot(Settings->SaveSlotName, Settings->SaveUserIndex)))
+	{
+		PendingLoadedStates = SaveGame->QuestStates;
+	}
+	else
+	{
+		LOG_ERROR("Quest save file exists but failed to load/cast.");
+	}
+}
+
+void UQuestSubsystem::SaveQuestData()
+{
+	const UQuestCoreSettings *Settings = GetDefault<UQuestCoreSettings>();
+
+	// Guard against a bad/unset config value rather than crashing
+	// CreateSaveGameObject with a null class.
+	TSubclassOf<UQuestSaveGame> ClassToUse = Settings->SaveGameClass;
+	if (!ClassToUse)
+	{
+		ClassToUse = UQuestSaveGame::StaticClass();
+	}
+
+	UQuestSaveGame *SaveGame = Cast<UQuestSaveGame>(UGameplayStatics::CreateSaveGameObject(ClassToUse));
+	if (!SaveGame)
+	{
+		LOG_ERROR("Failed to create save game instance of class '%s'.", *ClassToUse->GetName());
+		return;
+	}
+
+	for (const UQuestComponent *Quest : RegisteredQuests)
+	{
+		if (!Quest)
+		{
+			continue;
+		}
+		const FName QuestId = Quest->GetQuestId();
+		if (!QuestId.IsNone())
+		{
+			SaveGame->QuestStates.Add(QuestId, Quest->State);
+		}
+	}
+
+	UGameplayStatics::SaveGameToSlot(SaveGame, Settings->SaveSlotName, Settings->SaveUserIndex);
+}
+
+bool UQuestSubsystem::ActivateQuestById(FName QuestId)
+{
+	UQuestComponent *Quest = FindQuestById(QuestId);
+	if (!Quest)
+	{
+		return false;
+	}
+
+	return Quest->ActivateQuest();
+}
+
+bool UQuestSubsystem::DeactivateQuestById(FName QuestId)
+{
+	UQuestComponent *Quest = FindQuestById(QuestId);
+	if (!Quest)
+	{
+		return false;
+	}
+
+	return Quest->DeactivateQuest();
+}
+
+bool UQuestSubsystem::ActivateQuest(UQuestDefinition *Definition)
+{
+	UQuestComponent *Quest = FindQuestByDefinition(Definition);
+	if (!Quest)
+	{
+		return false;
+	}
+
+	return Quest->ActivateQuest();
+}
+
+bool UQuestSubsystem::DeactivateQuest(UQuestDefinition *Definition)
+{
+	UQuestComponent *Quest = FindQuestByDefinition(Definition);
+	if (!Quest)
+	{
+		return false;
+	}
+
+	return Quest->DeactivateQuest();
+}
+
 TArray<UQuestComponent *> UQuestSubsystem::GetActiveQuests() const
 {
 	TArray<UQuestComponent *> Result;
@@ -142,62 +244,4 @@ bool UQuestSubsystem::IsQuestFailedByDefinition(UQuestDefinition *Definition) co
 {
 	const UQuestComponent *Quest = FindQuestByDefinition(Definition);
 	return Quest && Quest->IsQuestFailed();
-}
-
-void UQuestSubsystem::LoadQuestData()
-{
-	PendingLoadedStates.Empty();
-
-	const UQuestCoreSettings *Settings = GetDefault<UQuestCoreSettings>();
-
-	if (!UGameplayStatics::DoesSaveGameExist(Settings->SaveSlotName, Settings->SaveUserIndex))
-	{
-		return;
-	}
-
-	// Cast<UQuestSaveGame> still works even if the actual loaded object
-	// is a project-specific subclass - we only need the base fields here.
-	if (UQuestSaveGame *SaveGame = Cast<UQuestSaveGame>(UGameplayStatics::LoadGameFromSlot(Settings->SaveSlotName, Settings->SaveUserIndex)))
-	{
-		PendingLoadedStates = SaveGame->QuestStates;
-	}
-	else
-	{
-		LOG_ERROR("Quest save file exists but failed to load/cast.");
-	}
-}
-
-void UQuestSubsystem::SaveQuestData()
-{
-	const UQuestCoreSettings *Settings = GetDefault<UQuestCoreSettings>();
-
-	// Guard against a bad/unset config value rather than crashing
-	// CreateSaveGameObject with a null class.
-	TSubclassOf<UQuestSaveGame> ClassToUse = Settings->SaveGameClass;
-	if (!ClassToUse)
-	{
-		ClassToUse = UQuestSaveGame::StaticClass();
-	}
-
-	UQuestSaveGame *SaveGame = Cast<UQuestSaveGame>(UGameplayStatics::CreateSaveGameObject(ClassToUse));
-	if (!SaveGame)
-	{
-		LOG_ERROR("Failed to create save game instance of class '%s'.", *ClassToUse->GetName());
-		return;
-	}
-
-	for (const UQuestComponent *Quest : RegisteredQuests)
-	{
-		if (!Quest)
-		{
-			continue;
-		}
-		const FName QuestId = Quest->GetQuestId();
-		if (!QuestId.IsNone())
-		{
-			SaveGame->QuestStates.Add(QuestId, Quest->State);
-		}
-	}
-
-	UGameplayStatics::SaveGameToSlot(SaveGame, Settings->SaveSlotName, Settings->SaveUserIndex);
 }
