@@ -113,6 +113,10 @@ void UQuestComponent::SetState(const EQuestState NewState)
 					QuestComp->ActivateQuest();
 				}
 			}
+			if (QuestDefinition->bAutoSave)
+			{
+				GetQuestSubsystem()->SaveQuestData();
+			}
 		}
 		if (bAutoDestroy)
 		{
@@ -130,6 +134,10 @@ void UQuestComponent::SetState(const EQuestState NewState)
 				{
 					QuestComp->ActivateQuest();
 				}
+			}
+			if (QuestDefinition->bAutoSave)
+			{
+				GetQuestSubsystem()->SaveQuestData();
 			}
 		}
 		if (bAutoDestroy)

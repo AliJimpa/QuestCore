@@ -174,3 +174,16 @@ bool UQuestFunctionLibrary::IsQuestFailedByDefinition(const UObject *WorldContex
 	}
 	return Subsystem->IsQuestFailedByDefinition(Definition);
 }
+
+void UQuestFunctionLibrary::SaveAllQuest(const UObject *WorldContextObject)
+{
+	UWorld *World = GEngine ? GEngine->GetWorldFromContextObject(WorldContextObject, EGetWorldErrorMode::LogAndReturnNull) : nullptr;
+	UQuestSubsystem *Subsystem = World ? World->GetSubsystem<UQuestSubsystem>() : nullptr;
+	if (!Subsystem)
+	{
+		LOG_ERROR("Can't find UQuestSubsystem for CheckCompleted");
+		return;
+	}
+
+	Subsystem->SaveQuestData();
+}

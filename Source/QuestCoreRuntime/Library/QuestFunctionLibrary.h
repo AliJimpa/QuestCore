@@ -114,4 +114,8 @@ public:
 	 */
 	UFUNCTION(BlueprintPure, Category = "Quest", meta = (WorldContext = "WorldContextObject"))
 	static bool IsQuestFailedByDefinition(const UObject *WorldContextObject, UQuestDefinition *Definition);
+
+	// Writes every currently registered quest's state to disk.
+	UFUNCTION(BlueprintCallable, Category = "Quest", meta = (WorldContext = "WorldContextObject"))
+	void SaveAllQuest(const UObject *WorldContextObject);
 };

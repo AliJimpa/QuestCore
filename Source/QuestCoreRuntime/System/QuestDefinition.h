@@ -78,6 +78,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Event", meta = (Tooltip = "Set ActiveQuest when this quest failed"))
 	TArray<UQuestDefinition *> OnFailed;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest|Save")
+	bool bAutoSave = true;
+
 #if WITH_EDITOR
 	virtual void PostInitProperties() override
 	{
