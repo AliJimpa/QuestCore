@@ -30,6 +30,9 @@ class QUESTCORERUNTIME_API UQuestComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
+public:
+	void ApplyLoadedState(EQuestState SavedState);
+
 protected:
 	virtual void BeginPlay() override;
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;

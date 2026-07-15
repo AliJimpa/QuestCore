@@ -29,6 +29,16 @@ public:
 	bool IsQuestCompletedByDefinition(UQuestDefinition *Definition) const;
 	bool IsQuestFailedById(FName QuestId) const;
 	bool IsQuestFailedByDefinition(UQuestDefinition *Definition) const;
+	void SaveQuestData();
+
+protected:
+	virtual void Initialize(FSubsystemCollectionBase &Collection) override;
+
+private:
+	void LoadQuestData();
+
+private:
+	TMap<FName, EQuestState> PendingLoadedStates;
 
 private:
 	UPROPERTY()

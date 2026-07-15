@@ -22,9 +22,34 @@ void UQuestComponent::BeginPlay()
 
 	GetQuestSubsystem()->RegisterQuest(this);
 
-	if (bAutoActive)
+	if (bAutoActive && State == EQuestState::NotStarted)
 	{
 		ActivateQuest();
+	}
+}
+
+void UQuestComponent::ApplyLoadedState(EQuestState SavedState)
+{
+	switch (SavedState)
+	{
+	case EQuestState::Active:
+		SetState(EQuestState::Active);
+		GetQuestSubsystem()->SubmitQuestActivation(this, true);
+		break;
+	case EQuestState::Completed:
+		State = EQuestState::Completed;
+		if (bAutoDestroy)
+		{
+			GetOwner()->Destroy();
+		}
+		break;
+	case EQuestState::Failed:
+		State = EQuestState::Failed;
+		if (bAutoDestroy)
+		{
+			GetOwner()->Destroy();
+		}
+		break;
 	}
 }
 
