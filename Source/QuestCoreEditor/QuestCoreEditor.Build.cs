@@ -19,11 +19,17 @@ public class QuestCoreEditor : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[]
 		{
-			"AssetDefinition",
-			"UnrealEd",
-			"AssetTools",
+			"Core",
+			"CoreUObject",
+			"Engine",
+
 			"Slate",
-			"SlateCore"
+			"SlateCore",
+
+			"Projects",
+
+			"UnrealEd",
+			"AssetDefinition"
 		});
 	}
 }

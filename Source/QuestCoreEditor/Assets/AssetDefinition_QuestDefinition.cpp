@@ -1,5 +1,6 @@
 #include "AssetDefinition_QuestDefinition.h"
 #include "System/QuestDefinition.h"
+#include "Styling/SlateStyleRegistry.h"
 
 #define LOCTEXT_NAMESPACE "QuestAssetDefinition"
 
@@ -28,6 +29,18 @@ TConstArrayView<FAssetCategoryPath> UAssetDefinition_QuestDefinition::GetAssetCa
                 LOCTEXT("Quest", "Quest"))};
 
     return Categories;
+}
+
+const FSlateBrush *UAssetDefinition_QuestDefinition::GetIconBrush(const FAssetData &InAssetData, const FName InClassName) const
+{
+    const ISlateStyle *Style = FSlateStyleRegistry::FindSlateStyle("QuestCoreStyle");
+
+    if (Style)
+    {
+        return Style->GetBrush("QuestDefinition.Icon");
+    }
+
+    return nullptr;
 }
 
 #undef LOCTEXT_NAMESPACE

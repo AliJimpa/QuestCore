@@ -1,5 +1,3 @@
-// AssetDefinition_QuestDefinition.h
-
 #pragma once
 
 #include "AssetDefinitionDefault.h"
@@ -11,9 +9,10 @@ class QUESTCOREEDITOR_API UAssetDefinition_QuestDefinition : public UAssetDefini
     GENERATED_BODY()
 
 public:
-
     virtual FText GetAssetDisplayName() const override;
     virtual FLinearColor GetAssetColor() const override;
     virtual TSoftClassPtr<UObject> GetAssetClass() const override;
     virtual TConstArrayView<FAssetCategoryPath> GetAssetCategories() const override;
+
+    virtual const FSlateBrush *GetIconBrush(const FAssetData &InAssetData, const FName InClassName) const override;
 };
