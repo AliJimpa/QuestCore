@@ -14,5 +14,6 @@ public:
     virtual TSoftClassPtr<UObject> GetAssetClass() const override;
     virtual TConstArrayView<FAssetCategoryPath> GetAssetCategories() const override;
 
-    virtual const FSlateBrush *GetIconBrush(const FAssetData &InAssetData, const FName InClassName) const override;
+    virtual const FSlateBrush *GetThumbnailBrush(const FAssetData &InAssetData, const FName InClassName) const override;
+    virtual const FSlateBrush* GetIconBrush(const FAssetData& InAssetData, const FName InClassName) const override;
 };

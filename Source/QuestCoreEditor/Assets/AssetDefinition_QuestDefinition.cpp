@@ -1,6 +1,6 @@
 #include "AssetDefinition_QuestDefinition.h"
 #include "System/QuestDefinition.h"
-#include "Styling/SlateStyleRegistry.h"
+#include "Style/QuestDefinitionStyle.h"
 
 #define LOCTEXT_NAMESPACE "QuestAssetDefinition"
 
@@ -11,8 +11,7 @@ FText UAssetDefinition_QuestDefinition::GetAssetDisplayName() const
 
 FLinearColor UAssetDefinition_QuestDefinition::GetAssetColor() const
 {
-    // #BA7517 adventure / mission
-    return FLinearColor(FColor(186, 117, 23));
+    return QUESTDEFINITION_COLOR;
 }
 
 TSoftClassPtr<UObject> UAssetDefinition_QuestDefinition::GetAssetClass() const
@@ -31,16 +30,14 @@ TConstArrayView<FAssetCategoryPath> UAssetDefinition_QuestDefinition::GetAssetCa
     return Categories;
 }
 
+const FSlateBrush *UAssetDefinition_QuestDefinition::GetThumbnailBrush(const FAssetData &InAssetData, const FName InClassName) const
+{
+    return FQuestDefinitionStyle::Get().GetBrush("ClassThumbnail.QuestDefinition");
+}
+
 const FSlateBrush *UAssetDefinition_QuestDefinition::GetIconBrush(const FAssetData &InAssetData, const FName InClassName) const
 {
-    const ISlateStyle *Style = FSlateStyleRegistry::FindSlateStyle("QuestCoreStyle");
-
-    if (Style)
-    {
-        return Style->GetBrush("QuestDefinition.Icon");
-    }
-
-    return nullptr;
+    return FQuestDefinitionStyle::Get().GetBrush("ClassIcon.QuestDefinition");
 }
 
 #undef LOCTEXT_NAMESPACE
