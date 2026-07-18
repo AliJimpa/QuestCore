@@ -19,6 +19,7 @@ public class QuestCoreEditor : ModuleRules
 
 		PrivateDependencyModuleNames.AddRange(new string[]
 		{
+			"AssetDefinition",
 			"UnrealEd",
 			"AssetTools",
 			"Slate",

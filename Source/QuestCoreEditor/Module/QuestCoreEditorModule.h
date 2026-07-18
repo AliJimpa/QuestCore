@@ -10,7 +10,4 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 
-private:
-	EAssetTypeCategories::Type QuestAssetCategory = EAssetTypeCategories::Misc;
-	//TSharedPtr<class FAssetTypeActions_QuestDefinition> QuestDefinitionAssetTypeActions;
 };
