@@ -2,21 +2,24 @@
 
 #include "CoreMinimal.h"
 #include "Factories/Factory.h"
+#include "System/QuestDefinition.h"
 #include "QuestDefinitionFactory.generated.h"
 
 UCLASS()
-class UQuestDefinitionFactory : public UFactory
+class QUESTCOREEDITOR_API UQuestDefinitionFactory : public UFactory
 {
 	GENERATED_BODY()
 
 public:
-	UQuestDefinitionFactory();
+	UQuestDefinitionFactory()
+	{
+		bCreateNew = true;
+		bEditAfterNew = true;
+		SupportedClass = UQuestDefinition::StaticClass();
+	}
 
-	virtual UObject* FactoryCreateNew(
-		UClass* Class,
-		UObject* InParent,
-		FName Name,
-		EObjectFlags Flags,
-		UObject* Context,
-		FFeedbackContext* Warn) override;
+	virtual UObject *FactoryCreateNew(UClass *Class, UObject *InParent, FName Name, EObjectFlags Flags, UObject *Context, FFeedbackContext *Warn) override
+	{
+		return NewObject<UQuestDefinition>(InParent, Class, Name, Flags);
+	}
 };

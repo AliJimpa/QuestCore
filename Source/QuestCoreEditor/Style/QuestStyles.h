@@ -7,40 +7,47 @@
 #include "Styling/SlateStyleRegistry.h"
 #include "Brushes/SlateImageBrush.h"
 
-// #BA7517 adventure / mission
-#define QUESTDEFINITION_COLOR FLinearColor(FColor(186, 117, 23))
-
-class FQuestDefinitionStyle : public FSlateStyleSet
+class FQuestStyles : public FSlateStyleSet
 {
 public:
-    static FQuestDefinitionStyle &Get()
+    static FQuestStyles &Get()
     {
-        static FQuestDefinitionStyle Instance;
+        static FQuestStyles Instance;
         return Instance;
     }
 
 private:
-    FQuestDefinitionStyle() : FSlateStyleSet("QuestDefinitionStyle")
+    FQuestStyles() : FSlateStyleSet("QuestStyles")
     {
         const FString PluginResourcesDir = IPluginManager::Get().FindPlugin(TEXT("QuestCore"))->GetBaseDir() / TEXT("Resources");
         SetContentRoot(PluginResourcesDir);
 
-        // Small icon used in menus, right-click context menu, toolbars, etc.
+        // Definition
         Set("ClassIcon.QuestDefinition", new FSlateImageBrush(
                                              RootToContentDir(TEXT("QuestDefinition"), TEXT(".png")),
                                              FVector2D(16.f, 16.f),
                                              FLinearColor::White));
 
-        // Larger thumbnail used in Content Browser tiles
         Set("ClassThumbnail.QuestDefinition", new FSlateImageBrush(
                                                   RootToContentDir(TEXT("QuestDefinition"), TEXT(".png")),
                                                   FVector2D(64.f, 64.f),
                                                   FLinearColor::White));
 
+        // Objective
+        Set("ClassIcon.QuestObjective", new FSlateImageBrush(
+                                            RootToContentDir(TEXT("QuestObjective"), TEXT(".png")),
+                                            FVector2D(16.f, 16.f),
+                                            FLinearColor::White));
+
+        Set("ClassThumbnail.QuestObjective", new FSlateImageBrush(
+                                                 RootToContentDir(TEXT("QuestObjective"), TEXT(".png")),
+                                                 FVector2D(64.f, 64.f),
+                                                 FLinearColor::White));
+
         FSlateStyleRegistry::RegisterSlateStyle(*this);
     }
 
-    ~FQuestDefinitionStyle()
+    ~FQuestStyles()
     {
         FSlateStyleRegistry::UnRegisterSlateStyle(*this);
     }
