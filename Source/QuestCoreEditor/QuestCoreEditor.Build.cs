@@ -29,7 +29,8 @@ public class QuestCoreEditor : ModuleRules
 			"Projects",
 
 			"UnrealEd",
-			"AssetDefinition"
+			"AssetDefinition",
+			"AssetTools"
 		});
 	}
 }
