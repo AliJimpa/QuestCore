@@ -3,19 +3,19 @@
 #include "CoreMinimal.h"
 #include "AssetTypeActions_Base.h"
 #include "Style/QuestStyles.h"
-#include "System/QuestObjective.h"
+#include "System/QuestPrerequisite.h"
 
-class FAssetTypeActions_QuestObjective : public FAssetTypeActions_Base
+class FAssetTypeActions_QuestPrerequisite : public FAssetTypeActions_Base
 {
 public:
-    FAssetTypeActions_QuestObjective(EAssetTypeCategories::Type InAssetCategoryBit)
+    FAssetTypeActions_QuestPrerequisite(EAssetTypeCategories::Type InAssetCategoryBit)
         : AssetCategoryBit(InAssetCategoryBit)
     {
     }
 
     virtual FText GetName() const override
     {
-        return NSLOCTEXT("QuestCoreEditor", "AssetTypeName_QuestObjective", "Objective");
+        return NSLOCTEXT("QuestCoreEditor", "AssetTypeName_QuestPrerequisite", "Prerequisite");
     }
 
     virtual FColor GetTypeColor() const override
@@ -25,7 +25,7 @@ public:
 
     virtual UClass *GetSupportedClass() const override
     {
-        return UQuestObjective::StaticClass();
+        return UQuestPrerequisite::StaticClass();
     }
 
     virtual uint32 GetCategories() override
@@ -42,12 +42,12 @@ public:
 
     virtual const FSlateBrush *GetThumbnailBrush(const FAssetData &InAssetData, const FName InClassName) const override
     {
-        return FQuestStyles::Get().GetBrush("ClassThumbnail.QuestObjective");
+        return FQuestStyles::Get().GetBrush("ClassThumbnail.QuestPrerequisite");
     }
 
     virtual const FSlateBrush *GetIconBrush(const FAssetData &InAssetData, const FName InClassName) const override
     {
-        return FQuestStyles::Get().GetBrush("ClassIcon.QuestObjective");
+        return FQuestStyles::Get().GetBrush("ClassIcon.QuestPrerequisite");
     }
 
 private:

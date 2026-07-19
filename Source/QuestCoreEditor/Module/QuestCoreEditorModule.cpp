@@ -3,10 +3,8 @@
 #include "AssetToolsModule.h"
 #include "IAssetTools.h"
 
-#include "ToolMenus.h"
-
-
 #include "Assets\AssetTypeActions_QuestObjective.h"
+#include "Assets\AssetTypeActions_QuestPrerequisite.h"
 
 #define LOCTEXT_NAMESPACE "FQuestCoreEditorModule"
 
@@ -18,6 +16,9 @@ void FQuestCoreEditorModule::StartupModule()
     TSharedRef<FAssetTypeActions_QuestObjective> QuestObjectiveActions = MakeShared<FAssetTypeActions_QuestObjective>(CoreCategoryBit);
     AssetTools.RegisterAssetTypeActions(QuestObjectiveActions);
     RegisteredAssetTypeActions.Add(QuestObjectiveActions);
+    // TSharedRef<FAssetTypeActions_QuestPrerequisite> QuestPrerequisiteActions = MakeShared<FAssetTypeActions_QuestPrerequisite>(CoreCategoryBit);
+    // AssetTools.RegisterAssetTypeActions(QuestPrerequisiteActions);
+    // RegisteredAssetTypeActions.Add(QuestPrerequisiteActions);
 }
 
 void FQuestCoreEditorModule::ShutdownModule()

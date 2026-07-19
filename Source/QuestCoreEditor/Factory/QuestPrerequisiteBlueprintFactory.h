@@ -2,28 +2,28 @@
 
 #include "CoreMinimal.h"
 #include "Factories/BlueprintFactory.h"
-#include "System/QuestObjective.h"
+#include "System/QuestPrerequisite.h"
 #include "AssetToolsModule.h"
 #include "IAssetTools.h"
-#include "QuestObjectiveBlueprintFactory.generated.h"
+#include "QuestPrerequisiteBlueprintFactory.generated.h"
 
 UCLASS()
-class QUESTCOREEDITOR_API UQuestObjectiveBlueprintFactory : public UBlueprintFactory
+class QUESTCOREEDITOR_API UQuestPrerequisiteBlueprintFactory : public UBlueprintFactory
 {
     GENERATED_BODY()
 
 public:
-    UQuestObjectiveBlueprintFactory()
+    UQuestPrerequisiteBlueprintFactory()
     {
         bCreateNew = true;
         bEditAfterNew = true;
         SupportedClass = UBlueprint::StaticClass();
-        ParentClass = UQuestObjective::StaticClass();
+        ParentClass = UQuestPrerequisite::StaticClass();
     }
 
     virtual FText GetDisplayName() const override
     {
-        return NSLOCTEXT("QuestCoreEditor", "QuestObjectiveFactory", "Objective");
+        return NSLOCTEXT("QuestCoreEditor", "QuestObjectiveFactory", "Prerequisite");
     }
 
     virtual uint32 GetMenuCategories() const override
@@ -34,7 +34,7 @@ public:
 
     virtual bool ConfigureProperties() override
     {
-        ParentClass = UQuestObjective::StaticClass();
+        ParentClass = UQuestPrerequisite::StaticClass();
         return true;
     }
 };
