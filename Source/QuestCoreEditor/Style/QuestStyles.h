@@ -44,6 +44,17 @@ private:
                                                  FVector2D(64.f, 64.f),
                                                  FLinearColor::White));
 
+        // Prerequisite
+        Set("ClassIcon.QuestPrerequisite", new FSlateImageBrush(
+                                               RootToContentDir(TEXT("QuestPrerequisite"), TEXT(".png")),
+                                               FVector2D(16.f, 16.f),
+                                               FLinearColor::White));
+
+        Set("ClassThumbnail.QuestPrerequisite", new FSlateImageBrush(
+                                                    RootToContentDir(TEXT("QuestPrerequisite"), TEXT(".png")),
+                                                    FVector2D(64.f, 64.f),
+                                                    FLinearColor::White));
+
         FSlateStyleRegistry::RegisterSlateStyle(*this);
     }
 

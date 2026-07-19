@@ -29,7 +29,13 @@ public:
     virtual uint32 GetMenuCategories() const override
     {
         FAssetToolsModule &AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools");
-        return AssetToolsModule.Get().FindAdvancedAssetCategory(FName(TEXT("Quest")));
+        return AssetToolsModule.Get().FindAdvancedAssetCategory(FName(TEXT("Core")));
+    }
+
+    virtual const TArray<FText> &GetMenuCategorySubMenus() const override
+    {
+        static const TArray<FText> SubMenus{NSLOCTEXT("QuestCoreEditor", "QuestSubMenu", "Quest")};
+        return SubMenus;
     }
 
     virtual bool ConfigureProperties() override
