@@ -55,6 +55,17 @@ private:
                                                     FVector2D(64.f, 64.f),
                                                     FLinearColor::White));
 
+        // Event
+        Set("ClassIcon.QuestEvent", new FSlateImageBrush(
+                                               RootToContentDir(TEXT("QuestEvent"), TEXT(".png")),
+                                               FVector2D(16.f, 16.f),
+                                               FLinearColor::White));
+
+        Set("ClassThumbnail.QuestEvent", new FSlateImageBrush(
+                                                    RootToContentDir(TEXT("QuestEvent"), TEXT(".png")),
+                                                    FVector2D(64.f, 64.f),
+                                                    FLinearColor::White));
+
         FSlateStyleRegistry::RegisterSlateStyle(*this);
     }
 
