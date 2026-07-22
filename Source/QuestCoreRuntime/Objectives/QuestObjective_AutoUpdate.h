@@ -38,16 +38,15 @@ private:
 private:
     void HandleTimerTick()
     {
-        const AActor *Owner = GetOwner();
-        UWorld *World = Owner ? Owner->GetWorld() : nullptr;
         UQuestSubsystem *Subsystem = World ? World->GetSubsystem<UQuestSubsystem>() : nullptr;
 
-        if (!Subsystem || !GetDefination())
+        const UQuestDefinition *MyDefination = GetQuestComponent()->GetDefinition();
+        if (!Subsystem || !MyDefination)
         {
             return;
         }
 
-        if (UQuestComponent *Quest = Subsystem->FindQuestByDefinition(GetDefination()))
+        if (UQuestComponent *Quest = Subsystem->FindQuestByDefinition(MyDefination))
         {
             Quest->UpdateQuest();
         }
@@ -57,18 +56,12 @@ protected:
     virtual void Begin_Implementation() override
     {
         const AActor *Owner = GetOwner();
-        if (UWorld *World = Owner ? Owner->GetWorld() : nullptr)
-        {
-            World->GetTimerManager().SetTimer(TimerHandle, this, &UQuestObjective_AutoUpdate::HandleTimerTick, Duration, /*bLoop=*/true);
-        }
+        World->GetTimerManager().SetTimer(TimerHandle, this, &UQuestObjective_AutoUpdate::HandleTimerTick, Duration, /*bLoop=*/true);
     }
     virtual void End_Implementation() override
     {
         const AActor *Owner = GetOwner();
-        if (UWorld *World = Owner ? Owner->GetWorld() : nullptr)
-        {
-            World->GetTimerManager().ClearTimer(TimerHandle);
-        }
+        World->GetTimerManager().ClearTimer(TimerHandle);
     }
     virtual EQuestObjectiveState GetState_Implementation() const override { return EQuestObjectiveState::Done; }
     virtual float GetProgress_Implementation() const override { return 1.f; }

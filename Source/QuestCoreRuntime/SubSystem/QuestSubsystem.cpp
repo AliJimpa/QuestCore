@@ -35,6 +35,7 @@ bool UQuestSubsystem::RegisterQuest(UQuestComponent *Quest)
 	}
 
 	RegisteredQuests.AddUnique(Quest);
+	LOG("Quest [%s] Registerd", *QuestId.ToString());
 
 	if (!QuestId.IsNone())
 	{
@@ -48,13 +49,16 @@ bool UQuestSubsystem::RegisterQuest(UQuestComponent *Quest)
 }
 void UQuestSubsystem::SubmitQuestActivation(UQuestComponent *Quest, bool bIsActive)
 {
+	const FName QuestId = Quest->GetQuestId();
 	if (bIsActive)
 	{
 		ActiveQuests.AddUnique(Quest);
+		LOG("Quest [%s] Activated", *QuestId.ToString());
 	}
 	else
 	{
 		ActiveQuests.Remove(Quest);
+		LOG("Quest [%s] Deactivated", *QuestId.ToString());
 	}
 }
 bool UQuestSubsystem::UnregisterQuest(UQuestComponent *Quest)
@@ -63,12 +67,26 @@ bool UQuestSubsystem::UnregisterQuest(UQuestComponent *Quest)
 	{
 		RegisteredQuests.Remove(Quest);
 		ActiveQuests.Remove(Quest);
+		const FName QuestId = Quest->GetQuestId();
+		LOG("Quest [%s] Unregisterd", *QuestId.ToString());
 		return true;
 	}
 	else
 	{
 		LOG_ERROR("Quest Not Valid for Unregister!");
 		return false;
+	}
+}
+
+void UQuestSubsystem::NotifyQuestUpdated(UQuestComponent *Quest)
+{
+	if (Quest != nullptr)
+	{
+		OnAnyQuestUpdated.Broadcast(Quest);
+	}
+	else
+	{
+		LOG_ERROR("Quest Not Valid for Update!");
 	}
 }
 
@@ -94,7 +112,6 @@ void UQuestSubsystem::LoadQuestData()
 		LOG_ERROR("Quest save file exists but failed to load/cast.");
 	}
 }
-
 void UQuestSubsystem::SaveQuestData()
 {
 	const UQuestCoreSettings *Settings = GetDefault<UQuestCoreSettings>();
@@ -123,14 +140,14 @@ void UQuestSubsystem::SaveQuestData()
 		const FName QuestId = Quest->GetQuestId();
 		if (!QuestId.IsNone())
 		{
-			SaveGame->QuestStates.Add(QuestId, Quest->State);
+			SaveGame->QuestStates.Add(QuestId, Quest->GetQuestState());
 		}
 	}
 
 	UGameplayStatics::SaveGameToSlot(SaveGame, Settings->SaveSlotName, Settings->SaveUserIndex);
 }
 
-bool UQuestSubsystem::ActivateQuestById(FName QuestId)
+bool UQuestSubsystem::StartQuestById(FName QuestId)
 {
 	UQuestComponent *Quest = FindQuestById(QuestId);
 	if (!Quest)
@@ -138,10 +155,9 @@ bool UQuestSubsystem::ActivateQuestById(FName QuestId)
 		return false;
 	}
 
-	return Quest->ActivateQuest();
+	return Quest->StartQuest();
 }
-
-bool UQuestSubsystem::DeactivateQuestById(FName QuestId)
+bool UQuestSubsystem::ResetQuestById(FName QuestId)
 {
 	UQuestComponent *Quest = FindQuestById(QuestId);
 	if (!Quest)
@@ -149,10 +165,9 @@ bool UQuestSubsystem::DeactivateQuestById(FName QuestId)
 		return false;
 	}
 
-	return Quest->DeactivateQuest();
+	return Quest->ResetQuest();
 }
-
-bool UQuestSubsystem::ActivateQuest(UQuestDefinition *Definition)
+bool UQuestSubsystem::StartQuest(const UQuestDefinition *Definition)
 {
 	UQuestComponent *Quest = FindQuestByDefinition(Definition);
 	if (!Quest)
@@ -160,10 +175,9 @@ bool UQuestSubsystem::ActivateQuest(UQuestDefinition *Definition)
 		return false;
 	}
 
-	return Quest->ActivateQuest();
+	return Quest->StartQuest();
 }
-
-bool UQuestSubsystem::DeactivateQuest(UQuestDefinition *Definition)
+bool UQuestSubsystem::ResetQuest(const UQuestDefinition *Definition)
 {
 	UQuestComponent *Quest = FindQuestByDefinition(Definition);
 	if (!Quest)
@@ -171,10 +185,10 @@ bool UQuestSubsystem::DeactivateQuest(UQuestDefinition *Definition)
 		return false;
 	}
 
-	return Quest->DeactivateQuest();
+	return Quest->ResetQuest();
 }
 
-TArray<UQuestComponent *> UQuestSubsystem::GetActiveQuests() const
+TArray<UQuestComponent *> UQuestSubsystem::GetStartedQuests() const
 {
 	TArray<UQuestComponent *> Result;
 	Result.Reserve(ActiveQuests.Num());
@@ -184,7 +198,6 @@ TArray<UQuestComponent *> UQuestSubsystem::GetActiveQuests() const
 	}
 	return Result;
 }
-
 TArray<UQuestComponent *> UQuestSubsystem::GetAvailableQuests() const
 {
 	TArray<UQuestComponent *> Result;
@@ -209,12 +222,11 @@ UQuestComponent *UQuestSubsystem::FindQuestById(FName QuestId) const
 	}
 	return nullptr;
 }
-
-UQuestComponent *UQuestSubsystem::FindQuestByDefinition(UQuestDefinition *Definition) const
+UQuestComponent *UQuestSubsystem::FindQuestByDefinition(const UQuestDefinition *Definition) const
 {
 	for (UQuestComponent *Quest : RegisteredQuests)
 	{
-		if (Quest && Quest->QuestDefinition == Definition)
+		if (Quest && Quest->GetDefinition() == Definition)
 		{
 			return Quest;
 		}
@@ -227,20 +239,17 @@ bool UQuestSubsystem::IsQuestCompletedById(FName QuestId) const
 	const UQuestComponent *Quest = FindQuestById(QuestId);
 	return Quest && Quest->IsQuestCompleted();
 }
-
-bool UQuestSubsystem::IsQuestCompletedByDefinition(UQuestDefinition *Definition) const
+bool UQuestSubsystem::IsQuestCompletedByDefinition(const UQuestDefinition *Definition) const
 {
 	const UQuestComponent *Quest = FindQuestByDefinition(Definition);
 	return Quest && Quest->IsQuestCompleted();
 }
-
 bool UQuestSubsystem::IsQuestFailedById(FName QuestId) const
 {
 	const UQuestComponent *Quest = FindQuestById(QuestId);
 	return Quest && Quest->IsQuestFailed();
 }
-
-bool UQuestSubsystem::IsQuestFailedByDefinition(UQuestDefinition *Definition) const
+bool UQuestSubsystem::IsQuestFailedByDefinition(const UQuestDefinition *Definition) const
 {
 	const UQuestComponent *Quest = FindQuestByDefinition(Definition);
 	return Quest && Quest->IsQuestFailed();

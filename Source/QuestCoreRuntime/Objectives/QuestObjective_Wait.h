@@ -24,42 +24,40 @@ private:
 public:
 	UPROPERTY(EditAnywhere, Category = "Objective")
 	float Duration = 5.f;
+	UPROPERTY(EditAnywhere, Category = "Objective")
+	EQuestObjectiveState Result = EQuestObjectiveState::Done;
 
 private:
 	void HandleTimerFinished()
 	{
-		CachedState = EQuestObjectiveState::Done;
+		CachedState = Result;
 	}
 
 public:
 	virtual void Begin_Implementation() override
 	{
 		CachedState = EQuestObjectiveState::InProgress;
-
-		const AActor *Owner = GetOwner();
-		if (UWorld *World = Owner ? Owner->GetWorld() : nullptr)
-		{
-			World->GetTimerManager().SetTimer(TimerHandle, this, &UQuestObjective_Wait::HandleTimerFinished, Duration, false);
-		}
+		World->GetTimerManager().SetTimer(TimerHandle, this, &UQuestObjective_Wait::HandleTimerFinished, Duration, false);
 	}
 	virtual void End_Implementation() override
 	{
-		const AActor *Owner = GetOwner();
-		if (UWorld *World = Owner ? Owner->GetWorld() : nullptr)
-		{
-			World->GetTimerManager().ClearTimer(TimerHandle);
-		}
+		World->GetTimerManager().ClearTimer(TimerHandle);
 	}
 	virtual EQuestObjectiveState GetState_Implementation() const override { return CachedState; }
 	virtual float GetProgress_Implementation() const override
 	{
-		const AActor *Owner = GetOwner();
-		if (UWorld *World = Owner ? Owner->GetWorld() : nullptr)
+		if (CachedState == EQuestObjectiveState::InProgress)
 		{
 			const float Elapsed = World->GetTimerManager().GetTimerElapsed(TimerHandle);
 			return Duration > 0.f ? FMath::Clamp(Elapsed / Duration, 0.f, 1.f) : 1.f;
 		}
-		return 0.f;
+		if (CachedState == EQuestObjectiveState::Done)
+			return 1;
+		if (CachedState == EQuestObjectiveState::Failed)
+			return 0;
+		if (CachedState == EQuestObjectiveState::Canceld)
+			return 0;
+		return -1;
 	}
 	virtual FString GetObjectiveDescription_Implementation() const override { return TEXT("Wait Duration"); }
 };

@@ -2,81 +2,137 @@
 
 #include "CoreMinimal.h"
 #include "System/QuestObjective.h"
+#include "System/QuestPrerequisite.h"
 #include "QuestObjective_If.generated.h"
 
-UENUM(BlueprintType)
-enum class EQuestStateComparisonOp : uint8
-{
-    Equal,
-    NotEqual
-};
-
-/**
- * Watches another objective (TargetObjective) and resolves Done once
- * its state matches (or doesn't match) CompareToState. Lets you branch
- * quest logic off an objective's state without restructuring order
- * groups - e.g. "Done once the KillBoss objective is Failed" to route
- * a quest down an alternate path.
- *
- * Owns TargetObjective's lifecycle - Begin()/End() are forwarded to it,
- * same as Composite - so it can be used standalone without TargetObjective
- * needing to be a sibling entry elsewhere.
- */
-UCLASS(meta = (DisplayName = "If"))
+UCLASS(meta = (DisplayName = "IF"))
 class QUESTCORERUNTIME_API UQuestObjective_If : public UQuestObjective
 {
     GENERATED_BODY()
 
 public:
     UPROPERTY(EditAnywhere, Instanced, Category = "Quest")
-    TObjectPtr<UQuestObjective> TargetObjective;
-    UPROPERTY(EditAnywhere, Category = "Quest")
-    EQuestStateComparisonOp Operator = EQuestStateComparisonOp::Equal;
-    UPROPERTY(EditAnywhere, Category = "Quest")
-    EQuestObjectiveState CompareToState = EQuestObjectiveState::Done;
+    TObjectPtr<UQuestPrerequisite> Condition;
+    UPROPERTY(EditAnywhere, Instanced, Category = "Quest")
+    TObjectPtr<UQuestObjective> True;
+    UPROPERTY(EditAnywhere, Instanced, Category = "Quest")
+    TObjectPtr<UQuestObjective> False;
 
 protected:
-    virtual void Construction(UQuestComponent *Quest, UQuestDefinition *Defination) override
+    virtual void Construction(UQuestComponent *Quest) override
     {
-        Super::Construction(Quest, Defination);
-        if (TargetObjective)
+        Super::Construction(Quest);
+        if (True)
         {
-            TargetObjective->Construction(Quest, Defination);
+            True->Construction(Quest);
+        }
+        if (False)
+        {
+            False->Construction(Quest);
         }
     }
 
 public:
     virtual void Begin_Implementation() override
     {
-        if (TargetObjective)
+        if (True)
         {
-            TargetObjective->Begin();
+            True->Begin();
+        }
+        if (False)
+        {
+            False->Begin();
         }
     }
     virtual void End_Implementation() override
     {
-        if (TargetObjective)
+        if (True)
         {
-            TargetObjective->End();
+            True->End();
+        }
+        if (False)
+        {
+            False->End();
         }
     }
     virtual EQuestObjectiveState GetState_Implementation() const override
     {
-        if (!TargetObjective)
+        if (!Condition)
         {
             return EQuestObjectiveState::Done;
         }
-
-        const EQuestObjectiveState TargetState = TargetObjective->GetState();
-        const bool bConditionMet = (Operator == EQuestStateComparisonOp::Equal)
-                                       ? (TargetState == CompareToState)
-                                       : (TargetState != CompareToState);
-
-        return bConditionMet ? EQuestObjectiveState::Done : EQuestObjectiveState::InProgress;
+        if (Condition->IsSatisfied(GetQuestComponent()))
+        {
+            if (True)
+            {
+                return True->GetState();
+            }
+            else
+            {
+                return EQuestObjectiveState::Done;
+            }
+        }
+        else
+        {
+            if (False)
+            {
+                return False->GetState();
+            }
+            else
+            {
+                return EQuestObjectiveState::Done;
+            }
+        }
     }
     virtual float GetProgress_Implementation() const override
     {
-        return TargetObjective ? TargetObjective->GetProgress() : 1.0f;
+        if (!Condition)
+        {
+            return 1;
+        }
+        if (Condition->IsSatisfied(GetQuestComponent()))
+        {
+            if (True)
+            {
+                return True->GetProgress();
+            }
+            else
+            {
+                return 1;
+            }
+        }
+        else
+        {
+            if (False)
+            {
+                return False->GetProgress();
+            }
+            else
+            {
+                return 1;
+            }
+        }
     }
-    virtual FString GetObjectiveDescription_Implementation() const override { return TEXT("If Statement"); }
+    virtual FString GetObjectiveDescription_Implementation() const override
+    {
+        if (Condition != nullptr)
+        {
+            if (Condition->IsSatisfied(GetQuestComponent()))
+            {
+                if (True)
+                {
+                    return True->GetObjectiveDescription();
+                }
+            }
+            else
+            {
+                if (False)
+                {
+                    return False->GetObjectiveDescription();
+                }
+            }
+        }
+
+        return TEXT("If Statement");
+    }
 };

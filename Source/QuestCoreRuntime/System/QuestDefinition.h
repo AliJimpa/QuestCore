@@ -6,6 +6,7 @@
 
 class UQuestObjective;
 class UQuestPrerequisite;
+class UQuestEvent;
 
 UENUM(BlueprintType)
 enum class EQuestType : uint8
@@ -35,7 +36,7 @@ class QUESTCORERUNTIME_API UQuestDefinition : public UDataAsset
 
 public:
 	// Unique gameplay id used for lookups (QuestSubsystem::ActivateQuest, etc).
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Quest|Info")
+	UPROPERTY(VisibleAnywhere, Category = "Quest|Info")
 	FName QuestId;
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest|Info")
 	FText DisplayName;
@@ -48,38 +49,14 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest|Info")
 	TArray<FName> Tags;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Dependency")
-	TArray<UQuestDefinition *> QuestDependencies;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest|Permission", meta = (InlineEditConditionToggle))
-	bool bOverrideAutoActive = false;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest|Permission", meta = (EditCondition = "bOverrideAutoActive"))
-	bool bAutoActive = false;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest|Permission", meta = (InlineEditConditionToggle))
-	bool bOverrideAutoDestroy = false;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest|Permission", meta = (EditCondition = "bOverrideAutoDestroy"))
-	bool bAutoDestroy = false;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest|Permission", meta = (InlineEditConditionToggle))
-	bool bOverridePrerequisit = false;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest|Permission", meta = (EditCondition = "bOverridePrerequisit"))
-	TArray<TSubclassOf<UQuestPrerequisite>> PrerequisitClasses;
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest|Permission", meta = (InlineEditConditionToggle))
-	bool bOverrideObjective = false;
-	/**
-	 * The objective types this quest expects, in order. QuestComponent's
-	 * Objectives array (the actual instances) is validated against this
-	 * list in-editor - see UQuestComponent::PostEditChangeProperty.
-	 */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest|Permission", meta = (EditCondition = "bOverrideObjective"))
-	TArray<TSubclassOf<UQuestObjective>> ObjectiveClasses;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Event", meta = (Tooltip = "Set ActiveQuest when this quest completed"))
-	TArray<UQuestDefinition *> OnCompleted;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest|Event", meta = (Tooltip = "Set ActiveQuest when this quest failed"))
-	TArray<UQuestDefinition *> OnFailed;
-
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Quest|Save")
-	bool bAutoSave = true;
+	UPROPERTY(EditAnywhere, Instanced, Category = "Quest|Setting")
+	TArray<TObjectPtr<UQuestPrerequisite>> Prerequisites;
+	UPROPERTY(EditAnywhere, Instanced, Category = "Quest|Setting")
+	TArray<TObjectPtr<UQuestObjective>> Objectives;
+	UPROPERTY(EditAnywhere, Instanced, Category = "Quest|Events")
+	TArray<TObjectPtr<UQuestEvent>> OnCompleted;
+	UPROPERTY(EditAnywhere, Instanced, Category = "Quest|Events")
+	TArray<TObjectPtr<UQuestEvent>> OnFailed;
 
 #if WITH_EDITOR
 	virtual void PostInitProperties() override

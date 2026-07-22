@@ -23,6 +23,8 @@ class QUESTCORERUNTIME_API UQuestObjective_DefinitionOfDone : public UQuestObjec
     GENERATED_BODY()
 
 public:
+    UPROPERTY(EditAnywhere, Category = "Quest")
+    FString Description = TEXT("Definition Of Done");
     UPROPERTY(EditAnywhere, Instanced, Category = "Quest")
     TArray<TObjectPtr<UQuestObjective>> ChildObjectives;
     // Number of children that must be Done for this objective to be Done.
@@ -34,13 +36,13 @@ public:
     int32 RequiredFailCount = 0;
 
 public:
-    virtual void Construction(UQuestComponent *Quest, UQuestDefinition *Defination) override
+    virtual void Construction(UQuestComponent *Quest) override
     {
         for (UQuestObjective *Child : ChildObjectives)
         {
             if (Child)
             {
-                Child->Construction(Quest, Defination);
+                Child->Construction(Quest);
             }
         }
     }
@@ -123,5 +125,5 @@ protected:
 
         return FMath::Clamp(static_cast<float>(DoneCount) / static_cast<float>(RequiredDoneCount), 0.f, 1.f);
     }
-    virtual FString GetObjectiveDescription_Implementation() const override { return TEXT("Definition Of Done"); }
+    virtual FString GetObjectiveDescription_Implementation() const override { return Description; }
 };

@@ -21,6 +21,7 @@ public:
 	bool RegisterQuest(UQuestComponent *Quest);
 	void SubmitQuestActivation(UQuestComponent *Quest, bool bIsActive);
 	bool UnregisterQuest(UQuestComponent *Quest);
+	void NotifyQuestUpdated(UQuestComponent *Quest);
 
 protected:
 	virtual void Initialize(FSubsystemCollectionBase &Collection) override;
@@ -30,7 +31,7 @@ private:
 
 public:
 	UPROPERTY(BlueprintAssignable, Category = "Quest|Events")
-	FOnQuestStateChanged OnQuestStateChanged;
+	FOnQuestStateChanged OnAnyQuestUpdated;
 
 private:
 	UPROPERTY()
@@ -51,7 +52,7 @@ public:
 	 * @return true if a matching quest was found and activation was attempted; false if no quest is registered for this definition.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "QuestSubsystem")
-	bool ActivateQuest(UQuestDefinition *Definition);
+	bool StartQuest(const UQuestDefinition *Definition);
 	/**
 	 * Activates the quest matching the given QuestId.
 	 * @param WorldContextObject Any object in the target world (used to resolve the QuestSubsystem).
@@ -59,7 +60,7 @@ public:
 	 * @return true if a matching quest was found and activation was attempted; false if no quest is registered under this id.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "QuestSubsystem")
-	bool ActivateQuestById(FName QuestId);
+	bool StartQuestById(FName QuestId);
 	/**
 	 * Deactivates the quest matching the given definition asset.
 	 * @param WorldContextObject Any object in the target world (used to resolve the QuestSubsystem).
@@ -67,7 +68,7 @@ public:
 	 * @return true if a matching quest was found and deactivation was attempted; false if no quest is registered for this definition.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "QuestSubsystem")
-	bool DeactivateQuest(UQuestDefinition *Definition);
+	bool ResetQuest(const UQuestDefinition *Definition);
 	/**
 	 * Deactivates the quest matching the given QuestId.
 	 * @param WorldContextObject Any object in the target world (used to resolve the QuestSubsystem).
@@ -75,14 +76,14 @@ public:
 	 * @return true if a matching quest was found and deactivation was attempted; false if no quest is registered under this id.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "QuestSubsystem")
-	bool DeactivateQuestById(FName QuestId);
+	bool ResetQuestById(FName QuestId);
 
 	/**
 	 * Returns every quest currently in the Active state.
 	 * @return All registered quests whose state is EQuestState::Active.
 	 */
 	UFUNCTION(BlueprintPure, Category = "QuestSubsystem")
-	TArray<UQuestComponent *> GetActiveQuests() const;
+	TArray<UQuestComponent *> GetStartedQuests() const;
 	/**
 	 * Returns every quest that could be activated right now.
 	 * @return All registered quests still NotStarted whose prerequisites are currently satisfied.
@@ -102,7 +103,7 @@ public:
 	 * @return The matching quest, or nullptr if no registered quest uses this definition.
 	 */
 	UFUNCTION(BlueprintPure, Category = "QuestSubsystem")
-	UQuestComponent *FindQuestByDefinition(UQuestDefinition *Definition) const;
+	UQuestComponent *FindQuestByDefinition(const UQuestDefinition *Definition) const;
 	/**
 	 * Checks whether the quest matching QuestId has completed.
 	 * @param WorldContextObject Any object in the target world (used to resolve the QuestSubsystem).
@@ -118,7 +119,7 @@ public:
 	 * @return true if a matching quest is registered and its state is Completed; false otherwise (including if not found).
 	 */
 	UFUNCTION(BlueprintPure, Category = "QuestSubsystem")
-	bool IsQuestCompletedByDefinition(UQuestDefinition *Definition) const;
+	bool IsQuestCompletedByDefinition(const UQuestDefinition *Definition) const;
 	/**
 	 * Checks whether the quest matching QuestId has failed.
 	 * @param WorldContextObject Any object in the target world (used to resolve the QuestSubsystem).
@@ -134,5 +135,5 @@ public:
 	 * @return true if a matching quest is registered and its state is Failed; false otherwise (including if not found).
 	 */
 	UFUNCTION(BlueprintPure, Category = "QuestSubsystem")
-	bool IsQuestFailedByDefinition(UQuestDefinition *Definition) const;
+	bool IsQuestFailedByDefinition(const UQuestDefinition *Definition) const;
 };

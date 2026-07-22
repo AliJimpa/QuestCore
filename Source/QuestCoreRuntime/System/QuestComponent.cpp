@@ -1,39 +1,16 @@
 #include "QuestComponent.h"
-#include "SubSystem/QuestSubsystem.h"
-#include "QuestObjective.h"
 #include "Engine/QuestDebug.h"
-
-void UQuestComponent::BeginPlay()
-{
-	Super::BeginPlay();
-
-	if (QuestDefinition != nullptr)
-	{
-		for (UQuestObjective *Objective : Objectives)
-		{
-			Objective->Construction(this, QuestDefinition);
-		}
-	}
-	else
-	{
-		LOG_ERROR("QuestDefinition is not valid");
-		return;
-	}
-
-	GetQuestSubsystem()->RegisterQuest(this);
-
-	if (bAutoActive && State == EQuestState::NotStarted)
-	{
-		ActivateQuest();
-	}
-}
+#include "QuestPrerequisite.h"
+#include "QuestObjective.h"
+#include "QuestEvent.h"
+#include "SubSystem/QuestSubsystem.h"
 
 void UQuestComponent::ApplyLoadedState(EQuestState SavedState)
 {
 	switch (SavedState)
 	{
-	case EQuestState::Active:
-		SetState(EQuestState::Active);
+	case EQuestState::InProgress:
+		SetState(EQuestState::InProgress);
 		GetQuestSubsystem()->SubmitQuestActivation(this, true);
 		break;
 	case EQuestState::Completed:
@@ -52,7 +29,6 @@ void UQuestComponent::ApplyLoadedState(EQuestState SavedState)
 		break;
 	}
 }
-
 UQuestSubsystem *UQuestComponent::GetQuestSubsystem() const
 {
 	if (!CachedSubsystem.IsValid())
@@ -63,7 +39,7 @@ UQuestSubsystem *UQuestComponent::GetQuestSubsystem() const
 		}
 		else
 		{
-			LOG_ERROR("Can't find UQuestSubsystem for Register");
+			LOG_ERROR("[%s]: Can't find UQuestSubsystem for Register", *GetOwner()->GetName());
 			return nullptr;
 		}
 	}
@@ -71,52 +47,70 @@ UQuestSubsystem *UQuestComponent::GetQuestSubsystem() const
 	return CachedSubsystem.Get();
 }
 
+void UQuestComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	if (QuestDefinition != nullptr)
+	{
+		for (UQuestObjective *Objective : QuestDefinition->Objectives)
+		{
+			Objective->Construction(this);
+		}
+	}
+	else
+	{
+		LOG_ERROR("[%s]: QuestDefinition is not valid", *GetOwner()->GetName());
+		return;
+	}
+
+	const bool IsRegisterd = GetQuestSubsystem()->RegisterQuest(this);
+	if (!IsRegisterd)
+		return;
+
+	if (bAutoActive && State == EQuestState::NotStarted)
+	{
+		StartQuest();
+	}
+}
+void UQuestComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (State == EQuestState::InProgress)
+		ResetQuest();
+
+	GetQuestSubsystem()->UnregisterQuest(this);
+
+	Super::EndPlay(EndPlayReason);
+}
+
 void UQuestComponent::BeginObjectives()
 {
-	for (UQuestObjective *Objective : Objectives)
+	for (UQuestObjective *Objective : QuestDefinition->Objectives)
 	{
 		Objective->Begin();
 	}
 }
-
-void UQuestComponent::EndObjectives()
-{
-	for (UQuestObjective *Objective : Objectives)
-	{
-		Objective->End();
-	}
-}
-
 void UQuestComponent::SetState(const EQuestState NewState)
 {
 	const EQuestState LastState = State;
 	State = NewState;
-	GetQuestSubsystem()->OnQuestStateChanged.Broadcast(this);
+	GetQuestSubsystem()->NotifyQuestUpdated(this);
 	switch (State)
 	{
 	case EQuestState::NotStarted:
-		if (LastState == EQuestState::Active)
+		if (LastState == EQuestState::InProgress)
 			EndObjectives();
 		break;
-	case EQuestState::Active:
+	case EQuestState::InProgress:
 		BeginObjectives();
 		break;
 	case EQuestState::Completed:
 		EndObjectives();
 		OnQuestCompleted.Broadcast(this);
-		if (QuestDefinition != nullptr)
+		InvokeQuestEvents(true);
+		if (bAutoSave)
 		{
-			for (UQuestDefinition *QuestDef : QuestDefinition->OnCompleted)
-			{
-				if (UQuestComponent *QuestComp = GetQuestSubsystem()->FindQuestByDefinition(QuestDef))
-				{
-					QuestComp->ActivateQuest();
-				}
-			}
-			if (QuestDefinition->bAutoSave)
-			{
-				GetQuestSubsystem()->SaveQuestData();
-			}
+			GetQuestSubsystem()->SaveQuestData();
 		}
 		if (bAutoDestroy)
 		{
@@ -126,19 +120,10 @@ void UQuestComponent::SetState(const EQuestState NewState)
 	case EQuestState::Failed:
 		EndObjectives();
 		OnQuestFailed.Broadcast(this);
-		if (QuestDefinition != nullptr)
+		InvokeQuestEvents(false);
+		if (bAutoSave)
 		{
-			for (UQuestDefinition *QuestDef : QuestDefinition->OnFailed)
-			{
-				if (UQuestComponent *QuestComp = GetQuestSubsystem()->FindQuestByDefinition(QuestDef))
-				{
-					QuestComp->ActivateQuest();
-				}
-			}
-			if (QuestDefinition->bAutoSave)
-			{
-				GetQuestSubsystem()->SaveQuestData();
-			}
+			GetQuestSubsystem()->SaveQuestData();
 		}
 		if (bAutoDestroy)
 		{
@@ -147,32 +132,58 @@ void UQuestComponent::SetState(const EQuestState NewState)
 		break;
 	}
 }
-
-bool UQuestComponent::ActivateQuest()
+void UQuestComponent::InvokeQuestEvents(bool IsCompleted)
 {
-	if (State == EQuestState::Active)
+	if (QuestDefinition != nullptr)
 	{
-		LOG("Quest already is Active.");
+		if (IsCompleted)
+		{
+			for (UQuestEvent *Event : QuestDefinition->OnCompleted)
+			{
+				Event->Execute(this);
+			}
+		}
+		else
+		{
+			for (UQuestEvent *Event : QuestDefinition->OnFailed)
+			{
+				Event->Execute(this);
+			}
+		}
+	}
+}
+void UQuestComponent::EndObjectives()
+{
+	for (UQuestObjective *Objective : QuestDefinition->Objectives)
+	{
+		Objective->End();
+	}
+}
+
+bool UQuestComponent::StartQuest()
+{
+	if (State == EQuestState::InProgress)
+	{
+		LOG_WARNING("[%s]: Quest already is InProgress.", *GetOwner()->GetName());
 		return false;
 	}
 
 	if (!ArePrerequisitesSatisfied())
 	{
-		LOG_WARNING("Prerequisites not Satisfied.");
+		LOG_WARNING("[%s]: Prerequisites not Satisfied.", *GetOwner()->GetName());
 		return false;
 	}
 
-	SetState(EQuestState::Active);
+	SetState(EQuestState::InProgress);
 	GetQuestSubsystem()->SubmitQuestActivation(this, true);
 
 	return true;
 }
-
-bool UQuestComponent::DeactivateQuest()
+bool UQuestComponent::ResetQuest()
 {
 	if (State == EQuestState::NotStarted)
 	{
-		LOG("Quest already is Deactive.");
+		LOG("[%s]: Quest already is Deactive.", *GetOwner()->GetName());
 		return false;
 	}
 
@@ -181,45 +192,16 @@ bool UQuestComponent::DeactivateQuest()
 
 	return true;
 }
-
-bool UQuestComponent::ArePrerequisitesSatisfied() const
-{
-	if (QuestDefinition != nullptr)
-	{
-		if (QuestDefinition->QuestDependencies.Num() > 0)
-		{
-			for (UQuestDefinition *Depended : QuestDefinition->QuestDependencies)
-			{
-				if (Depended == nullptr)
-					continue;
-				if (GetQuestSubsystem()->IsQuestCompletedByDefinition(Depended) == false)
-				{
-					LOG_WARNING("Quest(%s) need to Complite first there is dependency Quest", *Depended->GetName());
-					return false;
-				}
-			}
-		}
-	}
-	for (const UQuestPrerequisite *Prerequisite : Prerequisites)
-	{
-		if (!Prerequisite || !Prerequisite->IsSatisfied(GetOwner(), QuestDefinition))
-		{
-			return false;
-		}
-	}
-	return true;
-}
-
 void UQuestComponent::UpdateQuest()
 {
-	if (State != EQuestState::Active)
+	if (State != EQuestState::InProgress)
 	{
 		return;
 	}
 
 	bool bAnyFailed = false;
 	bool bAllDone = true;
-	for (const UQuestObjective *Objective : Objectives)
+	for (const UQuestObjective *Objective : QuestDefinition->Objectives)
 	{
 		const EQuestObjectiveState ObjState = Objective->GetState();
 		if (ObjState == EQuestObjectiveState::Failed)
@@ -248,32 +230,39 @@ void UQuestComponent::UpdateQuest()
 	}
 }
 
+bool UQuestComponent::ArePrerequisitesSatisfied() const
+{
+	for (const UQuestPrerequisite *Prerequisite : QuestDefinition->Prerequisites)
+	{
+		if (!Prerequisite || !Prerequisite->IsSatisfied(this))
+		{
+			return false;
+		}
+	}
+	return true;
+}
+
+FName UQuestComponent::GetQuestId() const
+{
+	return QuestDefinition ? QuestDefinition->QuestId : NAME_None;
+}
 float UQuestComponent::GetProgress() const
 {
 	float Total = 0.f;
-	for (const UQuestObjective *Objective : Objectives)
+	for (const UQuestObjective *Objective : QuestDefinition->Objectives)
 	{
 		Total += Objective->GetProgress();
 	}
-	return Total / Objectives.Num();
+	return Total / QuestDefinition->Objectives.Num();
 }
-
-UQuestObjective *UQuestComponent::GetCurrentObjective() const
+int32 UQuestComponent::GetMaxObjective() const
 {
-	for (UQuestObjective *Objective : Objectives)
-	{
-		if (Objective && Objective->GetState() == EQuestObjectiveState::InProgress)
-		{
-			return Objective;
-		}
-	}
-	return nullptr;
+	return QuestDefinition != nullptr ? QuestDefinition->Objectives.Num() : -1;
 }
-
 int32 UQuestComponent::GetCurrentObjectiveIndex() const
 {
 	int32 Reesult = 0;
-	for (UQuestObjective *Objective : Objectives)
+	for (const UQuestObjective *Objective : QuestDefinition->Objectives)
 	{
 		if (Objective && Objective->GetState() == EQuestObjectiveState::InProgress)
 		{
@@ -283,127 +272,46 @@ int32 UQuestComponent::GetCurrentObjectiveIndex() const
 	}
 	return -1;
 }
-
-void UQuestComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+UQuestObjective *UQuestComponent::GetObjective(const int32 Index) const
 {
-	DeactivateQuest();
-
-	GetQuestSubsystem()->UnregisterQuest(this);
-
-	Super::EndPlay(EndPlayReason);
+	if (QuestDefinition->Objectives.Num() - 1 >= Index)
+	{
+		if (UQuestObjective *Objective = QuestDefinition->Objectives[Index])
+		{
+			return Objective;
+		}
+		else
+		{
+			LOG_WARNING("Objective With Index [%d] Is Not Valid", Index);
+		}
+	}
+	else
+	{
+		LOG_WARNING("Can't find Objective With Index [%d]", Index);
+	}
+	return nullptr;
 }
 
 #if WITH_EDITOR
-void UQuestComponent::PostEditChangeProperty(FPropertyChangedEvent &PropertyChangedEvent)
+void UQuestComponent::Visualize()
 {
-	Super::PostEditChangeProperty(PropertyChangedEvent);
-
-	if (QuestDefinition != nullptr)
+	if (QuestDefinition)
 	{
-		if (QuestDefinition->bOverrideAutoActive)
+		for (UQuestPrerequisite *Prerequisite : QuestDefinition->Prerequisites)
 		{
-			if (bAutoActive != QuestDefinition->bAutoActive)
-			{
-				const FString OwnerName = GetOwner() ? GetOwner()->GetName() : GetName();
-				const FString Message = FString::Printf(
-					TEXT("[%s] AutoActive does not match QuestDefinition '%s' (Should be  %s)."),
-					*OwnerName, *QuestDefinition->GetName(), QuestDefinition->bAutoActive ? TEXT("True") : TEXT("False"));
-
-				if (GEngine)
-				{
-					GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, Message);
-				}
-			}
+			Prerequisite->OnVisualize(this);
 		}
-
-		if (QuestDefinition->bOverrideAutoDestroy)
+		for (UQuestObjective *Objective : QuestDefinition->Objectives)
 		{
-			if (bAutoDestroy != QuestDefinition->bAutoDestroy)
-			{
-				const FString OwnerName = GetOwner() ? GetOwner()->GetName() : GetName();
-				const FString Message = FString::Printf(
-					TEXT("[%s] AutoDestroy does not match QuestDefinition '%s' (Should be  %s)."),
-					*OwnerName, *QuestDefinition->GetName(), QuestDefinition->bAutoDestroy ? TEXT("True") : TEXT("False"));
-
-				if (GEngine)
-				{
-					GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, Message);
-				}
-			}
+			Objective->OnVisualize(this);
 		}
-
-		if (QuestDefinition->bOverrideObjective)
+		for (UQuestEvent *Event : QuestDefinition->OnCompleted)
 		{
-			const TArray<TSubclassOf<UQuestObjective>> &ExpectedClasses = QuestDefinition->ObjectiveClasses;
-			const FString OwnerName = GetOwner() ? GetOwner()->GetName() : GetName();
-			if (Objectives.Num() != ExpectedClasses.Num())
-			{
-				const FString Message = FString::Printf(
-					TEXT("[%s] Objectives count (%d) does not match QuestDefinition '%s' (expects %d)."),
-					*OwnerName, Objectives.Num(), *QuestDefinition->GetName(), ExpectedClasses.Num());
-
-				if (GEngine)
-				{
-					GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, Message);
-				}
-				return;
-			}
-			for (int32 Index = 0; Index < Objectives.Num(); ++Index)
-			{
-				const UQuestObjective *Objective = Objectives[Index];
-				const TSubclassOf<UQuestObjective> ExpectedClass = ExpectedClasses[Index];
-
-				if (!Objective || !ExpectedClass || Objective->GetClass() != ExpectedClass)
-				{
-					const FString FoundName = Objective ? Objective->GetClass()->GetName() : TEXT("None");
-					const FString ExpectedName = ExpectedClass ? ExpectedClass->GetName() : TEXT("None");
-					const FString Message = FString::Printf(
-						TEXT("[%s] Objective[%d] mismatch - found '%s', expected '%s'."),
-						*OwnerName, Index, *FoundName, *ExpectedName);
-
-					if (GEngine)
-					{
-						GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, Message);
-					}
-				}
-			}
+			Event->OnVisualize(this);
 		}
-
-		if (QuestDefinition->bOverridePrerequisit)
+		for (UQuestEvent *Event : QuestDefinition->OnFailed)
 		{
-			const TArray<TSubclassOf<UQuestPrerequisite>> &ExpectedClasses = QuestDefinition->PrerequisitClasses;
-			const FString OwnerName = GetOwner() ? GetOwner()->GetName() : GetName();
-			if (Prerequisites.Num() != ExpectedClasses.Num())
-			{
-				const FString Message = FString::Printf(
-					TEXT("[%s] Prerequisites count (%d) does not match QuestDefinition '%s' (expects %d)."),
-					*OwnerName, Prerequisites.Num(), *QuestDefinition->GetName(), ExpectedClasses.Num());
-
-				if (GEngine)
-				{
-					GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, Message);
-				}
-				return;
-			}
-			for (int32 Index = 0; Index < Prerequisites.Num(); ++Index)
-			{
-				const UQuestPrerequisite *Prerequisit = Prerequisites[Index];
-				const TSubclassOf<UQuestPrerequisite> ExpectedClass = ExpectedClasses[Index];
-
-				if (!Prerequisit || !ExpectedClass || Prerequisit->GetClass() != ExpectedClass)
-				{
-					const FString FoundName = Prerequisit ? Prerequisit->GetClass()->GetName() : TEXT("None");
-					const FString ExpectedName = ExpectedClass ? ExpectedClass->GetName() : TEXT("None");
-					const FString Message = FString::Printf(
-						TEXT("[%s] Prerequisit[%d] mismatch - found '%s', expected '%s'."),
-						*OwnerName, Index, *FoundName, *ExpectedName);
-
-					if (GEngine)
-					{
-						GEngine->AddOnScreenDebugMessage(-1, 8.f, FColor::Red, Message);
-					}
-				}
-			}
+			Event->OnVisualize(this);
 		}
 	}
 }
