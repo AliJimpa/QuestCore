@@ -11,7 +11,7 @@
 	"MarketplaceURL": "",
 	"SupportURL": "alibadpa007@gmail.com",
 	"CanContainContent": true,
-	"IsBetaVersion": false,
+	"IsBetaVersion": true,
 	"IsExperimentalVersion": false,
 	"Installed": false,
 	"Modules": [
@@ -21,9 +21,9 @@
 			"LoadingPhase": "Default"
 		},
 		{
-    		"Name": "QuestCoreEditor",
-    		"Type": "Editor",
-    		"LoadingPhase": "Default"
+			"Name": "QuestCoreEditor",
+			"Type": "Editor",
+			"LoadingPhase": "Default"
 		}
 	]
 }
