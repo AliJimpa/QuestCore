@@ -31,6 +31,7 @@ private:
 	void HandleTimerFinished()
 	{
 		CachedState = Result;
+		GetQuestComponent()->UpdateQuest();
 	}
 
 public:

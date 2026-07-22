@@ -41,7 +41,7 @@ private:
 	UQuestComponent *MyQuest;
 
 public:
-	// Called by the owning Quest when this objective becomes active
+	// Called by the owning Quest when this objective becomes start
 	UFUNCTION(BlueprintNativeEvent, Category = "Objective|Event")
 	void Begin();
 	virtual void Begin_Implementation() {}

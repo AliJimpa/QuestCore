@@ -183,7 +183,7 @@ bool UQuestComponent::ResetQuest()
 {
 	if (State == EQuestState::NotStarted)
 	{
-		LOG("[%s]: Quest already is Deactive.", *GetOwner()->GetName());
+		LOG("[%s]: Quest already is NotStarted.", *GetOwner()->GetName());
 		return false;
 	}
 

@@ -75,7 +75,7 @@ private:
 	EQuestState State = EQuestState::NotStarted;
 
 public:
-	// Starts the quest: moves to Active, begins the first objective group.
+	// Starts the quest: moves to Start, begins the first objective group.
 	UFUNCTION(BlueprintCallable, Category = "Quest|Functions")
 	bool StartQuest();
 	UFUNCTION(BlueprintCallable, Category = "Quest|Functions")
@@ -94,7 +94,7 @@ public:
 	 * your control, which could fire OnQuestUpdated/Completed/Failed more
 	 * often than expected. Consider BlueprintCallable instead if that matters.
 	 */
-	UFUNCTION(BlueprintPure, Category = "Quest|Getter", meta = (ToolTip = "Re-evaluates the quest's current objective group, then returns the resulting quest state (NotStarted / Active / Completed / Failed)."))
+	UFUNCTION(BlueprintPure, Category = "Quest|Getter", meta = (ToolTip = "Re-evaluates the quest's current objective group, then returns the resulting quest state (NotStarted / Inprogress / Completed / Failed)."))
 	const EQuestState EvaluateQuestState()
 	{
 		UpdateQuest();

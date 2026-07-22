@@ -9,7 +9,7 @@ class UQuestDefinition;
 
 /**
  * Owns the set of known quests for the world and exposes what's
- * available to activate vs currently active. Does not tick - quests
+ * available to activate vs currently started. Does not tick - quests
  * push updates to it via NotifyQuestUpdated() whenever they resolve
  * an objective group (see UQuestComponent::UpdateQuest()).
  */
@@ -19,7 +19,7 @@ class QUESTCORERUNTIME_API UQuestSubsystem : public UWorldSubsystem
 	GENERATED_BODY()
 public:
 	bool RegisterQuest(UQuestComponent *Quest);
-	void SubmitQuestActivation(UQuestComponent *Quest, bool bIsActive);
+	void SubmitQuestActivation(UQuestComponent *Quest, bool bIsStarted);
 	bool UnregisterQuest(UQuestComponent *Quest);
 	void NotifyQuestUpdated(UQuestComponent *Quest);
 
@@ -79,8 +79,8 @@ public:
 	bool ResetQuestById(FName QuestId);
 
 	/**
-	 * Returns every quest currently in the Active state.
-	 * @return All registered quests whose state is EQuestState::Active.
+	 * Returns every quest currently in the Started state.
+	 * @return All registered quests whose state is EQuestState::Inprogress.
 	 */
 	UFUNCTION(BlueprintPure, Category = "QuestSubsystem")
 	TArray<UQuestComponent *> GetStartedQuests() const;

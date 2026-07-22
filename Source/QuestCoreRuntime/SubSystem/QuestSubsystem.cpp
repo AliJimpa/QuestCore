@@ -47,18 +47,18 @@ bool UQuestSubsystem::RegisterQuest(UQuestComponent *Quest)
 
 	return true;
 }
-void UQuestSubsystem::SubmitQuestActivation(UQuestComponent *Quest, bool bIsActive)
+void UQuestSubsystem::SubmitQuestActivation(UQuestComponent *Quest, bool bIsStarted)
 {
 	const FName QuestId = Quest->GetQuestId();
-	if (bIsActive)
+	if (bIsStarted)
 	{
 		ActiveQuests.AddUnique(Quest);
-		LOG("Quest [%s] Activated", *QuestId.ToString());
+		LOG("Quest [%s] Started", *QuestId.ToString());
 	}
 	else
 	{
 		ActiveQuests.Remove(Quest);
-		LOG("Quest [%s] Deactivated", *QuestId.ToString());
+		LOG("Quest [%s] Reset", *QuestId.ToString());
 	}
 }
 bool UQuestSubsystem::UnregisterQuest(UQuestComponent *Quest)
