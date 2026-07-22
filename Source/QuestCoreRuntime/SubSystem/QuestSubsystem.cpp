@@ -78,15 +78,22 @@ bool UQuestSubsystem::UnregisterQuest(UQuestComponent *Quest)
 	}
 }
 
-void UQuestSubsystem::NotifyQuestUpdated(UQuestComponent *Quest)
+void UQuestSubsystem::NotifyQuestUpdated(UQuestComponent *Quest, bool bIsStarted)
 {
 	if (Quest != nullptr)
 	{
-		OnAnyQuestUpdated.Broadcast(Quest);
+		if (bIsStarted)
+		{
+			OnAnyQuestStarted.Broadcast(Quest);
+		}
+		else
+		{
+			OnAnyQuestReset.Broadcast(Quest);
+		}
 	}
 	else
 	{
-		LOG_ERROR("Quest Not Valid for Update!");
+		LOG_ERROR("Quest Not Valid for Notify!");
 	}
 }
 

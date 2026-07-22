@@ -21,7 +21,7 @@ public:
 	bool RegisterQuest(UQuestComponent *Quest);
 	void SubmitQuestActivation(UQuestComponent *Quest, bool bIsStarted);
 	bool UnregisterQuest(UQuestComponent *Quest);
-	void NotifyQuestUpdated(UQuestComponent *Quest);
+	void NotifyQuestUpdated(UQuestComponent *Quest, bool bIsStarted);
 
 protected:
 	virtual void Initialize(FSubsystemCollectionBase &Collection) override;
@@ -31,7 +31,9 @@ private:
 
 public:
 	UPROPERTY(BlueprintAssignable, Category = "Quest|Events")
-	FOnQuestStateChanged OnAnyQuestUpdated;
+	FOnQuestStateChanged OnAnyQuestStarted;
+	UPROPERTY(BlueprintAssignable, Category = "Quest|Events")
+	FOnQuestStateChanged OnAnyQuestReset;
 
 private:
 	UPROPERTY()

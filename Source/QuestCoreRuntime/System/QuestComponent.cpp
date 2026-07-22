@@ -94,15 +94,18 @@ void UQuestComponent::SetState(const EQuestState NewState)
 {
 	const EQuestState LastState = State;
 	State = NewState;
-	GetQuestSubsystem()->NotifyQuestUpdated(this);
 	switch (State)
 	{
 	case EQuestState::NotStarted:
 		if (LastState == EQuestState::InProgress)
+		{
 			EndObjectives();
+			GetQuestSubsystem()->NotifyQuestUpdated(this, false);
+		}
 		break;
 	case EQuestState::InProgress:
 		BeginObjectives();
+		GetQuestSubsystem()->NotifyQuestUpdated(this, true);
 		break;
 	case EQuestState::Completed:
 		EndObjectives();
@@ -112,6 +115,7 @@ void UQuestComponent::SetState(const EQuestState NewState)
 		{
 			GetQuestSubsystem()->SaveQuestData();
 		}
+		GetQuestSubsystem()->NotifyQuestUpdated(this, false);
 		if (bAutoDestroy)
 		{
 			GetOwner()->Destroy();
@@ -125,6 +129,7 @@ void UQuestComponent::SetState(const EQuestState NewState)
 		{
 			GetQuestSubsystem()->SaveQuestData();
 		}
+		GetQuestSubsystem()->NotifyQuestUpdated(this, false);
 		if (bAutoDestroy)
 		{
 			GetOwner()->Destroy();
