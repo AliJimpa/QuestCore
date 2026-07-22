@@ -3,11 +3,7 @@
 
 class UWorld *UQuestObjective::GetWorld() const
 {
-#if WITH_EDITOR
-    if (World == nullptr)
-        LOG_ERROR("Objective's World Not Valid");
-#endif
-    return World;
+    return MyQuest ? MyQuest->GetWorld() : nullptr;
 }
 
 void UQuestObjective::Construction(UQuestComponent *Quest)
