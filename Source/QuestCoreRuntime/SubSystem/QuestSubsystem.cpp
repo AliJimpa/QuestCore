@@ -45,6 +45,7 @@ bool UQuestSubsystem::RegisterQuest(UQuestComponent *Quest)
 		}
 	}
 
+	OnAnyQuestRegister.Broadcast(Quest);
 	return true;
 }
 void UQuestSubsystem::SubmitQuestActivation(UQuestComponent *Quest, bool bIsStarted)
@@ -69,6 +70,7 @@ bool UQuestSubsystem::UnregisterQuest(UQuestComponent *Quest)
 		ActiveQuests.Remove(Quest);
 		const FName QuestId = Quest->GetQuestId();
 		LOG("Quest [%s] Unregisterd", *QuestId.ToString());
+		OnAnyQuestUnregister.Broadcast(Quest);
 		return true;
 	}
 	else

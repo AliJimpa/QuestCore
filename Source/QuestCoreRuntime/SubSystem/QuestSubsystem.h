@@ -7,6 +7,15 @@
 
 class UQuestDefinition;
 
+UENUM(BlueprintType)
+enum class EQuest : uint8
+{
+	NotStarted,
+	InProgress,
+	Completed,
+	Failed
+};
+
 /**
  * Owns the set of known quests for the world and exposes what's
  * available to activate vs currently started. Does not tick - quests
@@ -30,6 +39,10 @@ private:
 	void LoadQuestData();
 
 public:
+	UPROPERTY(BlueprintAssignable, Category = "Quest|Events")
+	FOnQuestStateChanged OnAnyQuestRegister;
+	UPROPERTY(BlueprintAssignable, Category = "Quest|Events")
+	FOnQuestStateChanged OnAnyQuestUnregister;
 	UPROPERTY(BlueprintAssignable, Category = "Quest|Events")
 	FOnQuestStateChanged OnAnyQuestStarted;
 	UPROPERTY(BlueprintAssignable, Category = "Quest|Events")
