@@ -6,24 +6,31 @@
 
 <p align="center">
   <b>A lightweight Unreal Engine C++ plugin for fast quest-system prototyping</b><br/>
-   Composable set of building blocks: *Quests* are `ActorComponent`s, **Objectives** are Command Pattern objects, and everything is driven by explicit `UpdateQuest()` calls instead of ticking.
+  Composable set of building blocks: quests are data assets driven by an <code>ActorComponent</code>, objectives/prerequisites/events are all Command Pattern objects, and everything advances through explicit <code>UpdateQuest()</code> calls instead of ticking.
 </p>
 
 <p align="center">
   <img alt="Unreal Engine" src="https://img.shields.io/badge/Unreal%20Engine-5.6%2B-313131?logo=unrealengine" />
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green" />
-  <img alt="Platform" src="https://img.shields.io/badge/platform-Runtime%20Plugin-blue" />
+  <img alt="Platform" src="https://img.shields.io/badge/platform-Runtime%20%2B%20Editor%20Plugin-blue" />
+  <img alt="Status" src="https://img.shields.io/badge/status-Beta-orange" />
 </p>
 
 ---
 
+> **⚠️ Important — Beta plugin, instance lifetime caveat**
+> QuestCore is in **beta**. One thing to know before you rely on it for testing: `UQuestObjective`, `UQuestPrerequisite`, and `UQuestEvent` are all `DefaultToInstanced`, which means each one instanced on a `UQuestDefinition` is a sub-object of that data asset, not something that gets destroyed when you stop Play In Editor.
+>
+> In practice this means **any runtime state you cache on an objective/prerequisite/event instance (outside `UPROPERTY` fields meant to persist) survives across PIE sessions** — the instance keeps living as long as the `UQuestDefinition` asset stays loaded in memory, which for editor testing is typically until you close and reopen the editor (or the asset otherwise gets unloaded). It is **not** reset just because you pressed Stop.
+>
+> If your custom objective/prerequisite/event caches anything at runtime (a timer handle, a counter, a cached pointer, etc.), reset it explicitly in `Begin()` (or wherever your class's "start" hook is) rather than assuming it starts fresh — don't rely on a constructor or on PIE exit to clear it for you.
 
 ## Why QuestCore
 
 - **No tick, anywhere.** Objectives resolve by polling (checked when `UpdateQuest()` runs) or by binding to gameplay events — never a per-frame `Tick()`.
-- **Command Pattern objectives.** Every objective is a small, self-contained object with the same four hooks (`Begin`, `End`, `GetState`, `GetProgress`), so new objective types are cheap to add and Quest never needs to know how one resolves internally.
-- **Data-asset quest identity.** Quests are identified by a `UQuestDefinition` asset (with its own right-click **Create → Quest → Quest Definition** entry), not a hand-typed string.
-- **Built-in save/load**, project-wide config via **Project Settings → Game → Quest Core**, and a small function library for Blueprint-side quest control.
+- **Command Pattern all the way down.** Objectives, prerequisites, and events are each small, self-contained objects with a fixed interface (`Begin`/`End`/`GetState`/`GetProgress` for objectives, `IsSatisfied` for prerequisites, `Execute` for events), so new ones are cheap to add and the rest of the system never needs to know how they resolve internally.
+- **Quests are data assets.** A `UQuestDefinition` (`DataAsset`) owns the quest's identity, its objectives, its prerequisites, and its on-completed/on-failed event lists — all editable and browsable in the Content Browser, not hand-typed strings scattered across actors.
+- **Built-in save/load**, project-wide config via **Project Settings → Plugins → Quest Core**, and a full Blueprint-exposed API on both the component and the subsystem.
 
 ## Installation
 
@@ -33,114 +40,222 @@
 
 ## Quick Start
 
-1. **Create a Quest Definition asset** — right-click in the Content Browser (Create QuestDefinition(DataAsset)). Give it a `QuestId` (auto-fills from the asset name) and optionally a `DisplayName`/`Description`.
-
-2. **Add a `QuestComponent`** to an actor (an NPC, a manager actor, whatever owns the quest), assign the Quest Definition, and add one or more Objectives to its instanced `Objectives` array.
-
-3. **Drive it from gameplay code:**
+1. **Create a Quest Definition asset** — right-click in the Content Browser → **Create → Quest → Quest Definition**. It gets a `QuestId` automatically from the asset name.
+2. **Fill it in**: add one or more `Objectives`, optionally some `Prerequisites` that must be satisfied before the quest can start, and optionally `OnCompleted`/`OnFailed` events (e.g. to auto-start the next quest in a chain).
+3. **Add a `QuestComponent`** to an actor (an NPC, a manager actor, whatever owns the quest) and assign the Quest Definition to it.
+4. **Drive it from gameplay code:**
 
 ```cpp
 UQuestSubsystem *Subsystem = GetWorld()->GetSubsystem<UQuestSubsystem>();
 
-// Activate a quest by its definition asset
-Subsystem->ActivateQuest(MyQuestDefinition);
+// Start a quest by its definition asset
+Subsystem->StartQuest(MyQuestDefinition);
 
-// Or by id
-Subsystem->ActivateQuestById(TEXT("MyFirstQuest"));
+// ...or by id
+Subsystem->StartQuestById(TEXT("MyFirstQuest"));
 
 // Re-evaluate whenever something relevant happens
-Quest->UpdateQuest();
+QuestComponent->UpdateQuest();
 
 // Check progress/status
-const float Progress = Quest->GetProgress();
+const float Progress = QuestComponent->GetProgress();
 const bool bDone = Subsystem->IsQuestCompletedById(TEXT("MyFirstQuest"));
 ```
 
-Event-driven objectives (kill counts, item collection, dialogue) resolve on their own once the right event fires and call `UpdateQuest()` internally — no manual polling loop needed for those.
+Event-driven objectives resolve on their own once the right condition fires and call the protected `UpdateQuest()` helper internally — no manual polling loop needed for those. Polling-style objectives (like `Reach Location`) are simply re-checked live whenever `UpdateQuest()` runs.
 
 ## Architecture
 
 ```
-UQuestObjective (abstract)
- ├── Begin()   - called once the objective becomes active
- ├── End()                      - cleanup, always called (success or fail)
- ├── GetOwner()     - return owner actor has Questcomponent
- ├── GetDefination()    - return Defination asset
+UQuestDefinition : UDataAsset
+ ├── QuestId, DisplayName, Description, Type, Priority, Tags   - designer-facing identity
+ ├── Prerequisites[]           - UQuestPrerequisite objects gating StartQuest()
+ ├── Objectives[]               - the objectives that make up the quest
+ ├── OnCompleted[] / OnFailed[] - UQuestEvent objects fired on resolution
+ └── (auto-fills QuestId from the asset name on creation)
+
+UQuestObjective (abstract, Command Pattern)
+ ├── Construction(Quest)        - wires the objective to its owning QuestComponent/World
+ ├── Begin()                    - called once the objective becomes active
+ ├── End()                      - cleanup, always called (success, fail, or reset)
  ├── GetState() -> EQuestObjectiveState   (InProgress / Done / Failed / Canceld)
- └── GetProgress() -> float     (0-1, optional, for UI)
+ ├── GetProgress() -> float     (0-1, optional, for UI)
+ └── GetObjectiveDescription() -> FString
+
+UQuestPrerequisite (abstract, Command Pattern)
+ └── IsSatisfied(Quest) -> bool
+
+UQuestEvent (abstract, Command Pattern)
+ └── Execute(Quest)             - side effect fired from OnCompleted/OnFailed
 
 UQuestComponent : UActorComponent
- ├── QuestDefinition            - identity (UQuestDefinition data asset)
- ├── Objectives[]               - the objectives that make up this quest
- ├── Prerequisites[]            - UQuestPrerequisite command objects gating availability
- └── UpdateQuest()              - re-checks all objectives, advances/completes/fails
+ ├── QuestDefinition            - the data asset this component drives
+ ├── bAutoActive / bAutoDestroy / bAutoSave
+ ├── StartQuest() / ResetQuest() / UpdateQuest()
+ └── OnQuestCompleted / OnQuestFailed / OnQuestUpdated delegates
 
 UQuestSubsystem : UWorldSubsystem
  ├── Registers/unregisters quests as they BeginPlay/EndPlay
- ├── GetAvailableQuests() / GetActiveQuests()
+ ├── GetAvailableQuests() / GetStartedQuests()
  ├── FindQuestById() / FindQuestByDefinition()
+ ├── StartQuest(ById) / ResetQuest(ById)
  ├── Save/Load via UQuestSaveGame (QuestId -> EQuestState map)
- └── OnQuestStateChanged delegate
-
+ └── OnAnyQuestRegister / OnAnyQuestUnregister / OnAnyQuestStarted / OnAnyQuestReset
 ```
 
-A quest completes once **every** objective in its `Objectives` array reports `Done`; if any reports `Failed`, the quest fails. Objectives don't need to be authored one-at-a-time — `Composite` and `DefinitionOfDone` (below) let a single "objective slot" represent AND/OR/threshold logic over several sub-objectives.
+A quest completes once **every** objective in its definition's `Objectives` array reports `Done`; if any reports `Failed`, the quest fails immediately. Objectives don't need to be authored one-at-a-time — `Composite`, `DefinitionOfDone`, `Check`, and `If` (below) let a single "objective slot" represent AND/OR/threshold/branching logic over other objectives.
 
 ## Runtime Flow
- 
+
 **1. Startup (per world)**
 `UQuestSubsystem::Initialize()` runs first, before any quest exists yet. It calls `LoadQuestData()`, which reads the configured save slot (if one exists) into `PendingLoadedStates` — a `QuestId -> EQuestState` map staged in memory, not applied to anything yet, since no `QuestComponent` has registered at this point.
- 
+
 **2. A quest comes online**
 When a `QuestComponent`'s owning actor spawns, `BeginPlay()`:
-- Calls `Construction(this, QuestDefinition)` on every objective in `Objectives` — this only wires up each objective's back-reference to its owning quest and definition (`MyQuest` / `MyDefination`). It does **not** start the objective; that's `Begin()`'s job, later.
-- Registers with the subsystem via `RegisterQuest()`, which rejects the quest (and screen-logs) if another registered quest already shares its `QuestId`.
-- If registration succeeds and a saved state exists for this `QuestId` in `PendingLoadedStates`, `ApplyLoadedState()` restores it immediately — `Completed`/`Failed` just set `State` directly (nothing to resume), `Active` re-enters through `SetState(Active)`, which re-`Begin()`s every objective so event-driven ones can rebind.
-- Only then, if nothing was loaded and `bAutoActive` is set, does it call `ActivateQuest()` itself.
-**3. Activation**
-`ActivateQuest()` checks it isn't already `Active`, then `ArePrerequisitesSatisfied()` — which checks two independent things: every `UQuestDefinition` in `QuestDefinition->QuestDependencies` must already be `Completed` (cross-quest dependency chain), **and** every `UQuestPrerequisite` in the component's own `Prerequisites` list must pass. If both hold, `SetState(Active)` runs, which broadcasts the subsystem-level `OnQuestStateChanged`, then calls `Begin()` on every objective — this is the point objectives actually start polling/binding.
- 
+- Calls `Construction(this)` on every objective in the definition's `Objectives` array — this wires up each objective's back-reference to its owning `QuestComponent` and `World`. It does **not** start the objective; that's `Begin()`'s job, later.
+- Registers with the subsystem via `RegisterQuest()`, which rejects the quest (and screen-logs in red) if another registered quest already shares its `QuestId`.
+- If registration succeeds and a saved state exists for this `QuestId`, `ApplyLoadedState()` restores it immediately — `Completed`/`Failed` just set the internal state directly (nothing to resume, with `bAutoDestroy` honored), `InProgress` re-enters through `SetState(InProgress)`, which re-`Begin()`s every objective so event-driven ones can rebind.
+- Only then, if nothing was loaded and `bAutoActive` is set, does it call `StartQuest()` itself.
+
+**3. Starting**
+`StartQuest()` bails out if the quest is already `InProgress`, then checks `ArePrerequisitesSatisfied()` — every `UQuestPrerequisite` in the definition's `Prerequisites` list must return `true` (an empty list is *not* automatically satisfied for the built-in dependency prerequisites — see below). If it passes, `SetState(InProgress)` runs, which calls `Begin()` on every objective (this is the point objectives actually start polling/binding) and notifies the subsystem.
+
 **4. Resolving**
-Something calls `UpdateQuest()` — an objective calling its own protected `UpdateQuest()` helper after resolving itself, an `AutoUpdate` objective's timer, or external gameplay code. `UpdateQuest()` reads every objective's `GetState()`: any `Failed` short-circuits to `SetState(Failed)`; all `Done` triggers `SetState(Completed)`; otherwise it just broadcasts `OnQuestUpdated` and waits.
- 
+Something calls `UpdateQuest()` — an objective calling its own protected `UpdateQuest()` helper after resolving itself, or external gameplay code. `UpdateQuest()` reads every objective's `GetState()`: any `Failed` short-circuits to `SetState(Failed)`; all `Done` triggers `SetState(Completed)`; otherwise it just broadcasts `OnQuestUpdated` and waits.
+
 **5. Resolution**
-`SetState(Completed)` / `SetState(Failed)` both: broadcast the subsystem-level `OnQuestStateChanged`, call `End()` on every objective (cleanup — unbind events, clear timers), broadcast the per-quest `OnQuestCompleted`/`OnQuestFailed`, then — if `QuestDefinition` is set — walk `QuestDefinition->OnCompleted` (or `OnFailed`) and call `ActivateQuest()` on whichever registered quest matches each listed definition, chaining straight into the next quest with no extra wiring needed. If `QuestDefinition->bAutoSave` is set, this also triggers `SaveQuestData()` right here. If `bAutoDestroy` is set, the owning actor is destroyed.
- 
+`SetState(Completed)` / `SetState(Failed)` both: call `End()` on every objective (cleanup — unbind events, clear timers), broadcast the component-level `OnQuestCompleted`/`OnQuestFailed`, run every `UQuestEvent` in the definition's matching `OnCompleted`/`OnFailed` list (e.g. auto-starting or resetting other quests), save via `SaveQuestData()` if `bAutoSave` is set, notify the subsystem, and destroy the owning actor if `bAutoDestroy` is set.
+
 **6. Teardown**
-`EndPlay()` calls `DeactivateQuest()` (which, if the quest was `Active`, runs `SetState(NotStarted)` → `End()`s every objective) and then `UnregisterQuest()`.
- 
-**7. Editor-time validation (separate from the runtime flow above)**
-`PostEditChangeProperty()` fires on any property edit to the component in the editor. If `QuestDefinition` is assigned, it cross-checks four independent things — each gated by its own `bOverride*` flag on the definition (`bOverrideAutoActive`, `bOverrideAutoDestroy`, `bOverrideObjective`, `bOverridePrerequisit`) — and screen-logs a red message for any mismatch: `bAutoActive`/`bAutoDestroy` not matching the definition's expected value, or the `Objectives`/`Prerequisites` arrays not matching the definition's `ObjectiveClasses`/`PrerequisitClasses` in count or per-index class. Nothing here blocks saving or PIE — it's advisory only.
+`EndPlay()` calls `ResetQuest()` if the quest was still `InProgress` (which runs `SetState(NotStarted)` → `End()`s every objective) and then `UnregisterQuest()`.
+
+**7. Editor-time visualization (separate from the runtime flow above)**
+`QuestComponent` exposes a `CallInEditor` **Visualize** button that calls `OnVisualize()` on every prerequisite, objective, and event in the assigned definition — used for debug drawing (e.g. `ActorInBox` draws its check volume) without needing to Play In Editor.
 
 ## Built-in Objectives
 
 | Class | Resolves by | Notes |
 |---|---|---|
-| `ReachLocation` | Polling | Distance check between two resolvable actors (owner, a player pawn by index, or a fixed target actor) |
-| `KillActors` | Event | N kills of a target class, filtered to the quest owner |
-| `CollectItems` | Event | Tag-based (`FName ItemId`) so it's reusable across item types |
-| `TalkToActor` | Event | One-shot dialogue completion |
-| `Timer` | `TimerManager` | Single-shot wait, not a per-frame tick |
-| `Composite` | Aggregates children | `RequireAll` (AND) or `RequireAny` (OR) over a list of child objectives |
-| `DefinitionOfDone` | Aggregates children | Threshold-based: Done once *X* children are Done, Failed once *Y* are Failed |
-| `If` | Watches another objective | Resolves Done once a target objective's state (Equal/NotEqual) matches a comparison value — for branching quest logic |
-| `AutoUpdate` | Looping timer | Utility objective; periodically finds its own quest via the subsystem and calls `UpdateQuest()`. Always reports Done so it never blocks quest completion — it's a driver, not a gameplay condition |
+| `Reach Location` | Polling | Distance check between a player pawn (by `PlayerIndex`) and the quest's owning actor, within `AcceptRadius` |
+| `Wait` | `TimerManager` (single-shot) | Completes after `Duration` seconds since `Begin()`; `Result` lets it resolve to `Done` or `Failed` |
+| `Auto Update` | Looping timer | Utility objective, not a gameplay condition — periodically finds its own quest via the subsystem and calls `UpdateQuest()`. Always reports `Done` so it never blocks completion; it just keeps the quest re-evaluating without a Tick |
+| `Composite` | Aggregates children | `RequireAll` (AND) or `RequireAny` (OR) over a list of `ChildObjectives` |
+| `Definition Of Done` | Aggregates children (threshold) | `Done` once `RequiredDoneCount` children are `Done`; `Failed` once `RequiredFailCount` are `Failed` (fail takes priority if both hit on the same check) |
+| `Check` | Watches another objective | `Done` once `TargetObjective`'s state matches (`Equal`/`NotEqual`) `CompareToState` — for branching off an objective's state without restructuring the quest |
+| `IF` | Branches on a prerequisite | Evaluates a `UQuestPrerequisite` `Condition`; forwards to the `True` or `False` child objective accordingly (both are begun/ended together so either can resolve whenever the condition flips) |
 
-All of these are `Blueprintable` — override `Begin`/`End`/`GetState`/`GetProgress` in Blueprint to add project-specific objectives without touching C++.
+All of these are `Blueprintable` — override `Begin`/`End`/`GetState`/`GetProgress` in Blueprint to add project-specific objectives without touching C++. The editor also has a dedicated **Quest Objective Blueprint** factory for creating these from the Content Browser.
+
+## Built-in Prerequisites
+
+| Class | Checks |
+|---|---|
+| `QuestCompletion` / `QuestCompletionById` | Every listed `UQuestDefinition` (or `FName` id) must currently be `Completed` |
+| `QuestFailure` / `QuestFailureById` | Every listed `UQuestDefinition` (or `FName` id) must currently be `Failed` |
+| `ActorInBox` | An actor tagged `TargetTag` must currently overlap a box (`BoxExtent`) positioned at `RelativeLocation` from the quest owner |
+
+Note the dependency prerequisites (`QuestCompletion*`/`QuestFailure*`) require at least one entry in their list — an empty list returns `false`, not a pass-through.
+
+## Built-in Events
+
+| Class | Effect |
+|---|---|
+| `Start Quest` | Calls `Subsystem->StartQuest()` on every listed `UQuestDefinition` |
+| `Reset Quest` | Calls `Subsystem->ResetQuest()` on every listed `UQuestDefinition` |
+
+Drop these into a quest's `OnCompleted`/`OnFailed` list to chain straight into the next quest (or reset a dependent one) with no extra wiring.
 
 ## Save / Load
 
-`UQuestSubsystem` loads automatically on `Initialize()` if a save file exists for the configured slot, and stages the loaded state until each quest actually registers (since quests register later, in `BeginPlay`). Call `SaveQuestData()` whenever your game already saves.
+`UQuestSubsystem` loads automatically on `Initialize()` if a save file exists for the configured slot, and stages the loaded state until each quest actually registers (since quests register later, in `BeginPlay`). Call `SaveQuestData()` whenever your game already saves, or set a quest's `bAutoSave` to save automatically the moment it completes or fails.
 
-The save format (`UQuestSaveGame`) is just `TMap<FName /*QuestId*/, EQuestState>`. Point **Project Settings → Game → Quest Core → Save Game Class** at your own `UQuestSaveGame` subclass to persist additional project-specific data without touching `QuestSubsystem`.
+The save format (`UQuestSaveGame`) is just `TMap<FName /*QuestId*/, EQuestState>`. Point **Project Settings → Plugins → Quest Core → Save Game Class** at your own `UQuestSaveGame` subclass to persist additional project-specific data without touching `QuestSubsystem`.
 
 ## Project Settings
 
-Configurable under **Project Settings → Game → Quest Core**:
+Configurable under **Project Settings → Plugins → Quest Core**:
 
-- `Save Slot Name` / `Save User Index`
 - `Save Game Class` — which `USaveGame` subclass to use
+- `Save Slot Name` / `Save User Index`
+
+## Editor Support
+
+- Dedicated **Create → Quest** submenu for `Quest Definition` assets, plus factories for `Quest Objective` and `Quest Prerequisite` Blueprint subclasses.
+- Custom Content Browser icons/thumbnails for Quest Definitions, Objectives, Prerequisites, and Events.
+- Per-component **Visualize** button for debug-drawing prerequisite/objective checks in the editor viewport without entering PIE.
 
 ## Status
 
-Alpha. Built for fast iteration during prototyping, not yet battle-tested at production scale. Things intentionally *not* included yet: per-objective progress persistence (save/load only tracks top-level quest state), quest ordering/branching graphs, and networking/replication.
+Beta. Built for fast iteration during prototyping, not yet battle-tested at production scale. Things intentionally *not* included yet: per-objective progress persistence (save/load only tracks top-level quest state), quest ordering/branching graphs beyond `If`/`Check`, and networking/replication.
+
+## ClassDiagram
+```mermaid
+classDiagram
+    UQuestSubsystem <|-- UQuestComponent
+    UQuestSubsystem <|-- UQuestSaveGame
+    UQuestComponent <|-- UQuestDefinition
+    UQuestDefinition <|-- UQuestObjective
+    UQuestDefinition <|-- UQuestPrerequisite
+    UQuestDefinition <|-- UQuestEvent
+    class UQuestSaveGame {
+        +Map(QuestId,EQuestState) 
+    }
+    class UQuestSubsystem {
+        +Registers()
+        +Unregisters()
+        +Save()
+        +GetAvailableQuests()
+        +GetStartedQuests()
+        +FindQuestById()
+        +FindQuestByDefinition()
+        +StartQuest(ByID)
+        +ResetQuest(ByID)
+        +OnAnyQuestRegister
+        +OnAnyQuestUnregister
+        +OnAnyQuestStarted
+        +OnAnyQuestReset
+        -Load()
+    }
+    class UQuestComponent {
+        -QuestDefinition
+        +StartQuest()
+        +ResetQuest()
+        +UpdateQuest()
+        +bAutoActive
+        +bAutoDestroy
+        +bAutoSave
+        +OnQuestCompleted
+        +OnQuestFailed
+        +OnQuestUpdated
+    }
+    class UQuestEvent {
+        +Execute(Quest)
+    }
+    class UQuestPrerequisite {
+        + IsSatisfied(Quest)
+    }
+    class UQuestObjective {
+        +Construction(Quest)
+        +Begin()
+        +End()
+        +GetState()
+        +GetProgress()
+        +GetObjectiveDescription()
+    }
+    class UQuestDefinition {
+        +QuestId
+        +DisplayName
+        +Description
+        +Type
+        +Priority
+        +Tags
+        +UQuestPrerequisite[]
+        +Objectives[]
+        +OnCompleted[]
+        +OnFailed[]
+    }
+```
+
+## License
+
+MIT — see [LICENSE](LICENSE).
