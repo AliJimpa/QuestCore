@@ -2,6 +2,8 @@
 #include "System/QuestComponent.h"
 #include "Engine/QuestDebug.h"
 #include "Engine/QuestSaveGame.h"
+#include "Setting/QuestCoreSettings.h"
+#include "Kismet/GameplayStatics.h"
 
 void UQuestSubsystem::Initialize(FSubsystemCollectionBase &Collection)
 {

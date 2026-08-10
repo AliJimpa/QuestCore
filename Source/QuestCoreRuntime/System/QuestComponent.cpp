@@ -4,6 +4,7 @@
 #include "QuestObjective.h"
 #include "QuestEvent.h"
 #include "SubSystem/QuestSubsystem.h"
+#include "QuestDefinition.h"
 
 void UQuestComponent::ApplyLoadedState(EQuestState SavedState)
 {

@@ -5,6 +5,7 @@
 #include "System/QuestEvent.h"
 #include "System/QuestComponent.h"
 #include "SubSystem/QuestSubsystem.h"
+#include "System/QuestDefinition.h"
 #include "QuestEvent_PrintDebug.generated.h"
 
 class UQuestDefinition;

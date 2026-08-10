@@ -5,6 +5,7 @@
 #include "TimerManager.h"
 #include "GameFramework/Actor.h"
 #include "Engine/World.h"
+#include "System/QuestComponent.h"
 #include "QuestObjective_Wait.generated.h"
 
 /**

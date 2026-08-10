@@ -2,6 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "System/QuestPrerequisite.h"
+#include "SubSystem/QuestSubsystem.h"
+#include "System/QuestDefinition.h"
 #include "QuestPrerequisite_QuestCompletion.generated.h"
 
 UCLASS(meta = (DisplayName = "QuestCompletion"))
