@@ -8,16 +8,13 @@
 /**
  * Configure the CoreQuest Plugin
  */
-UCLASS(Config = Game, DefaultConfig, meta = (DisplayName = "Quest Core"))
+UCLASS(Config=QuestCore, DefaultConfig, meta = (DisplayName = "Quest Core"))
 class QUESTCORERUNTIME_API UQuestCoreSettings : public UDeveloperSettings
 {
     GENERATED_BODY()
 
 public:
-    UQuestCoreSettings()
-    {
-        CategoryName = TEXT("Plugins");
-    }
+	virtual FName GetCategoryName() const override { return TEXT("Plugins"); }
 
 public:
     // Which USaveGame class the subsystem creates/loads. Point this at
