@@ -237,7 +237,7 @@ UQuestComponent *UQuestSubsystem::FindQuestByDefinition(const UQuestDefinition *
 {
 	for (UQuestComponent *Quest : RegisteredQuests)
 	{
-		if (Quest && Quest->GetDefinition() == Definition)
+		if (Quest && Quest->GetDefinition()->QuestId == Definition->QuestId)
 		{
 			return Quest;
 		}

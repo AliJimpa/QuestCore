@@ -50,6 +50,8 @@ private:
 #endif
 
 private:
+	UPROPERTY()
+	TObjectPtr<UQuestDefinition> RuntimeQuestDefinition;
 	mutable TWeakObjectPtr<UQuestSubsystem> CachedSubsystem;
 
 public:
@@ -62,7 +64,7 @@ public:
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Quest")
-	UQuestDefinition *QuestDefinition;
+	TObjectPtr<UQuestDefinition> QuestDefinition;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest")
 	bool bAutoActive = false;
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Quest", meta = (Tooltip = "If true after the quest Completed or Failed automaticly destroed actor"))
@@ -105,7 +107,7 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
 	const EQuestState GetQuestState() const { return State; }
 	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
-	UQuestDefinition *GetDefinition() const { return QuestDefinition; }
+	UQuestDefinition *GetDefinition() const { return RuntimeQuestDefinition; }
 	// Convenience passthrough so existing FName-based lookups keep working.
 	UFUNCTION(BlueprintPure, Category = "Quest|Getter")
 	FName GetQuestId() const;

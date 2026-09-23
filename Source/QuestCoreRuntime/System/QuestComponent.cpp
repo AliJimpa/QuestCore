@@ -52,16 +52,17 @@ void UQuestComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (QuestDefinition != nullptr)
+	RuntimeQuestDefinition = DuplicateObject<UQuestDefinition>(QuestDefinition, this);
+	if (RuntimeQuestDefinition != nullptr)
 	{
-		for (UQuestObjective *Objective : QuestDefinition->Objectives)
+		for (UQuestObjective *Objective : RuntimeQuestDefinition->Objectives)
 		{
 			Objective->Construction(this);
 		}
 	}
 	else
 	{
-		LOG_ERROR("[%s]: QuestDefinition is not valid", *GetOwner()->GetName());
+		LOG_ERROR("[%s]: RuntimeQuestDefinition  is not valid", *GetOwner()->GetName());
 		return;
 	}
 
@@ -86,7 +87,7 @@ void UQuestComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void UQuestComponent::BeginObjectives()
 {
-	for (UQuestObjective *Objective : QuestDefinition->Objectives)
+	for (UQuestObjective *Objective : RuntimeQuestDefinition->Objectives)
 	{
 		Objective->Begin();
 	}
@@ -142,18 +143,18 @@ void UQuestComponent::SetState(const EQuestState NewState)
 }
 void UQuestComponent::InvokeQuestEvents(bool IsCompleted)
 {
-	if (QuestDefinition != nullptr)
+	if (RuntimeQuestDefinition != nullptr)
 	{
 		if (IsCompleted)
 		{
-			for (UQuestEvent *Event : QuestDefinition->OnCompleted)
+			for (UQuestEvent *Event : RuntimeQuestDefinition->OnCompleted)
 			{
 				Event->Execute(this);
 			}
 		}
 		else
 		{
-			for (UQuestEvent *Event : QuestDefinition->OnFailed)
+			for (UQuestEvent *Event : RuntimeQuestDefinition->OnFailed)
 			{
 				Event->Execute(this);
 			}
@@ -162,7 +163,7 @@ void UQuestComponent::InvokeQuestEvents(bool IsCompleted)
 }
 void UQuestComponent::EndObjectives()
 {
-	for (UQuestObjective *Objective : QuestDefinition->Objectives)
+	for (UQuestObjective *Objective : RuntimeQuestDefinition->Objectives)
 	{
 		Objective->End();
 	}
@@ -209,7 +210,7 @@ void UQuestComponent::UpdateQuest()
 
 	bool bAnyFailed = false;
 	bool bAllDone = true;
-	for (const UQuestObjective *Objective : QuestDefinition->Objectives)
+	for (const UQuestObjective *Objective : RuntimeQuestDefinition->Objectives)
 	{
 		const EQuestObjectiveState ObjState = Objective->GetState();
 		if (ObjState == EQuestObjectiveState::Failed)
@@ -242,7 +243,7 @@ void UQuestComponent::UpdateQuest()
 
 bool UQuestComponent::ArePrerequisitesSatisfied() const
 {
-	for (const UQuestPrerequisite *Prerequisite : QuestDefinition->Prerequisites)
+	for (const UQuestPrerequisite *Prerequisite : RuntimeQuestDefinition->Prerequisites)
 	{
 		if (!Prerequisite || !Prerequisite->IsSatisfied(this))
 		{
@@ -254,25 +255,25 @@ bool UQuestComponent::ArePrerequisitesSatisfied() const
 
 FName UQuestComponent::GetQuestId() const
 {
-	return QuestDefinition ? QuestDefinition->QuestId : NAME_None;
+	return RuntimeQuestDefinition ? RuntimeQuestDefinition->QuestId : NAME_None;
 }
 float UQuestComponent::GetProgress() const
 {
 	float Total = 0.f;
-	for (const UQuestObjective *Objective : QuestDefinition->Objectives)
+	for (const UQuestObjective *Objective : RuntimeQuestDefinition->Objectives)
 	{
 		Total += Objective->GetProgress();
 	}
-	return Total / QuestDefinition->Objectives.Num();
+	return Total / RuntimeQuestDefinition->Objectives.Num();
 }
 int32 UQuestComponent::GetMaxObjective() const
 {
-	return QuestDefinition != nullptr ? QuestDefinition->Objectives.Num() : -1;
+	return RuntimeQuestDefinition != nullptr ? RuntimeQuestDefinition->Objectives.Num() : -1;
 }
 int32 UQuestComponent::GetCurrentObjectiveIndex() const
 {
 	int32 Reesult = 0;
-	for (const UQuestObjective *Objective : QuestDefinition->Objectives)
+	for (const UQuestObjective *Objective : RuntimeQuestDefinition->Objectives)
 	{
 		if (Objective && Objective->GetState() == EQuestObjectiveState::InProgress)
 		{
@@ -280,13 +281,13 @@ int32 UQuestComponent::GetCurrentObjectiveIndex() const
 		}
 		Reesult++;
 	}
-	return -1;
+	return Reesult;
 }
 UQuestObjective *UQuestComponent::GetObjective(const int32 Index) const
 {
-	if (QuestDefinition->Objectives.Num() - 1 >= Index)
+	if (RuntimeQuestDefinition->Objectives.Num() - 1 >= Index)
 	{
-		if (UQuestObjective *Objective = QuestDefinition->Objectives[Index])
+		if (UQuestObjective *Objective = RuntimeQuestDefinition->Objectives[Index])
 		{
 			return Objective;
 		}
@@ -305,21 +306,21 @@ UQuestObjective *UQuestComponent::GetObjective(const int32 Index) const
 #if WITH_EDITOR
 void UQuestComponent::Visualize()
 {
-	if (QuestDefinition)
+	if (RuntimeQuestDefinition)
 	{
-		for (UQuestPrerequisite *Prerequisite : QuestDefinition->Prerequisites)
+		for (UQuestPrerequisite *Prerequisite : RuntimeQuestDefinition->Prerequisites)
 		{
 			Prerequisite->OnVisualize(this);
 		}
-		for (UQuestObjective *Objective : QuestDefinition->Objectives)
+		for (UQuestObjective *Objective : RuntimeQuestDefinition->Objectives)
 		{
 			Objective->OnVisualize(this);
 		}
-		for (UQuestEvent *Event : QuestDefinition->OnCompleted)
+		for (UQuestEvent *Event : RuntimeQuestDefinition->OnCompleted)
 		{
 			Event->OnVisualize(this);
 		}
-		for (UQuestEvent *Event : QuestDefinition->OnFailed)
+		for (UQuestEvent *Event : RuntimeQuestDefinition->OnFailed)
 		{
 			Event->OnVisualize(this);
 		}
