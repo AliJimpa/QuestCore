@@ -86,20 +86,6 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Quest|Functions")
 	void UpdateQuest();
-	/**
-	 * Returns the quest's current state, forcing a re-evaluation first.
-	 * NOTE: this has a side effect (UpdateQuest() can advance/complete/fail
-	 * the quest and broadcast delegates) despite being marked BlueprintPure -
-	 * Blueprint may call pure functions more than once per frame without
-	 * your control, which could fire OnQuestUpdated/Completed/Failed more
-	 * often than expected. Consider BlueprintCallable instead if that matters.
-	 */
-	UFUNCTION(BlueprintPure, Category = "Quest|Getter", meta = (ToolTip = "Re-evaluates the quest's current objective group, then returns the resulting quest state (NotStarted / Inprogress / Completed / Failed)."))
-	const EQuestState EvaluateQuestState()
-	{
-		UpdateQuest();
-		return State;
-	}
 
 	UFUNCTION(BlueprintPure, Category = "Quest|Status")
 	bool ArePrerequisitesSatisfied() const;

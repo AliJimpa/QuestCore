@@ -110,6 +110,7 @@ void UQuestComponent::SetState(const EQuestState NewState)
 		break;
 	case EQuestState::Completed:
 		EndObjectives();
+		OnQuestUpdated.Broadcast(this);
 		OnQuestCompleted.Broadcast(this);
 		InvokeQuestEvents(true);
 		if (bAutoSave)
@@ -124,6 +125,7 @@ void UQuestComponent::SetState(const EQuestState NewState)
 		break;
 	case EQuestState::Failed:
 		EndObjectives();
+		OnQuestUpdated.Broadcast(this);
 		OnQuestFailed.Broadcast(this);
 		InvokeQuestEvents(false);
 		if (bAutoSave)
@@ -221,8 +223,6 @@ void UQuestComponent::UpdateQuest()
 		}
 	}
 
-	OnQuestUpdated.Broadcast(this);
-
 	if (bAnyFailed)
 	{
 		SetState(EQuestState::Failed);
@@ -232,6 +232,10 @@ void UQuestComponent::UpdateQuest()
 		if (bAllDone)
 		{
 			SetState(EQuestState::Completed);
+		}
+		else
+		{
+			OnQuestUpdated.Broadcast(this);
 		}
 	}
 }
